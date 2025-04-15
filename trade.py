@@ -45,34 +45,73 @@ def show_chart():
         # Önceki içeriği temizle
         for widget in chart_frame.winfo_children():
             widget.destroy()
-        
+
         fig, axlist = draw_chart(df)
-        ax = axlist[0]  # sadece fiyat eksenine zoom yapacağız
+        ax = axlist[0]  # sadece fiyat eksenine zoom ve pan yapılacak
 
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
         canvas.draw()
         widget = canvas.get_tk_widget()
-        widget.pack(fill="both", expand=False,padx=(0, 0),  anchor="w")
+        widget.pack(fill="both", expand=False, padx=(0, 0), anchor="w")
 
-        # Mouse scroll eventini bağla
+        # Zoom işlemi (scroll + Ctrl)
         def on_scroll(event):
-            if event.state & 0x0004:  # Ctrl tuşu basılıysa
-                # x limiti al
+            if event.state & 0x0004:  # Ctrl basılıysa
                 x_min, x_max = ax.get_xlim()
                 x_range = x_max - x_min
                 zoom_factor = 0.1 * x_range
 
                 if event.delta > 0:
-                    # Yakınlaştır
                     ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
                 else:
-                    # Uzaklaştır
                     ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
 
                 canvas.draw_idle()
 
-        # Windows için scroll bind (macOS'ta farklı olabilir)
         widget.bind("<MouseWheel>", on_scroll)
+
+        # Sürükleme işlemi (sol tık + hareket)
+        is_dragging = False
+        last_x = None
+        last_y = None
+
+        def on_press(event):
+            nonlocal is_dragging, last_x, last_y
+            is_dragging = True
+            last_x = event.x
+            last_y = event.y
+
+        def on_release(event):
+            nonlocal is_dragging
+            is_dragging = False
+
+        def on_motion(event):
+            nonlocal is_dragging, last_x, last_y
+            if is_dragging:
+                dx = event.x - last_x
+                dy = event.y - last_y
+                last_x = event.x
+                last_y = event.y
+
+                # Ekseni kaydır
+                x_min, x_max = ax.get_xlim()
+                y_min, y_max = ax.get_ylim()
+
+                # Pan oranları
+                pan_x = dx * (x_max - x_min) / widget.winfo_width()
+                pan_y = dy * (y_max - y_min) / widget.winfo_height()
+
+                ax.set_xlim(x_min - pan_x, x_max - pan_x)
+                ax.set_ylim(y_min + pan_y, y_max + pan_y)
+
+                canvas.draw_idle()
+
+        widget.bind("<ButtonPress-1>", on_press)
+        widget.bind("<ButtonRelease-1>", on_release)
+        widget.bind("<B1-Motion>", on_motion)
+
+        canvas.draw_idle()
+
 
 # Tkinter arayüzü
 window = tk.Tk()
