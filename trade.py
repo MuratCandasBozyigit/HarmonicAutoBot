@@ -6,20 +6,14 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Binance bağlantısı
+# Binance bağlantısı (Futures için)
 exchange = ccxt.binance({
     'options': {
-        'defaultType': 'future'  # Perpetual market verilerini almak için
+        'defaultType': 'future'
     }
 })
 
-# Sadece .P ile biten perpetual coin çiftlerini al
-def get_perpetual_symbols():
-    markets = exchange.load_markets()
-    perpetual_symbols = [symbol for symbol in markets if symbol.endswith(":USDT")]
-    return perpetual_symbols
-
-# OHLCV verisini çek
+# Veri çek
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=100):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
@@ -32,11 +26,12 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=100):
         return None
 
 # Grafik çiz
-def draw_chart(data):
+def draw_chart(data,symbol):
     fig, axlist = mpf.plot(
         data,
         type='candle',
         style='yahoo',
+         title=symbol,
         ylabel='Fiyat',
         volume=False,
         returnfig=True,
@@ -44,7 +39,7 @@ def draw_chart(data):
     return fig, axlist
 
 # Grafik göster
-def show_chart():
+def show_chart(event=None):
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     timeframe = timeframe_var.get()
@@ -55,11 +50,10 @@ def show_chart():
 
     df = get_ohlcv(symbol, timeframe)
     if df is not None:
-        # Önceki içeriği temizle
         for widget in chart_frame.winfo_children():
             widget.destroy()
 
-        fig, axlist = draw_chart(df)
+        fig, axlist = draw_chart(df,symbol)
         ax = axlist[0]
 
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
@@ -67,7 +61,7 @@ def show_chart():
         widget = canvas.get_tk_widget()
         widget.pack(fill="both", expand=False, padx=(0, 0), anchor="w")
 
-        # Zoom (scroll + Ctrl)
+        # Zoom işlemi (Ctrl + scroll)
         def on_scroll(event):
             if event.state & 0x0004:
                 x_min, x_max = ax.get_xlim()
@@ -123,14 +117,10 @@ def show_chart():
 
         canvas.draw_idle()
 
-
 # Arayüz
 window = tk.Tk()
-window.title("Harmonic Gözlem Paneli - v0.2")
+window.title("Harmonic Gözlem Paneli - v0.3")
 window.geometry("1920x1080")
-
-# Coin listesi çek
-perpetual_list = get_perpetual_symbols()
 
 # Kontroller
 control_frame = tk.Frame(window)
@@ -138,12 +128,22 @@ control_frame.pack(pady=10)
 
 tk.Label(control_frame, text="Hesap Bakiyesi:").grid(row=0, column=4, padx=5)
 
-tk.Label(control_frame, text="Coin (örn: BTC, ETH veya BTC/USDT):").grid(row=0, column=0, padx=5)
+tk.Label(control_frame, text="Coin (örn: BTC veya BTC/USDT):").grid(row=0, column=0, padx=5)
 symbol_var = tk.StringVar()
-symbol_entry = ttk.Combobox(control_frame, textvariable=symbol_var, values=perpetual_list, state="normal")
+symbol_entry = tk.Entry(control_frame, textvariable=symbol_var, width=20)
 symbol_entry.grid(row=0, column=1, padx=5)
-symbol_entry.set("BTC/USDT")
+symbol_entry.insert(0, "BTC")
 
+# Tıklayınca temizle
+def clear_on_click(event):
+    symbol_entry.delete(0, tk.END)
+
+symbol_entry.bind("<FocusIn>", clear_on_click)
+
+# Enter ile veriyi göster
+symbol_entry.bind("<Return>", show_chart)
+
+# Zaman Dilimi Seçimi
 tk.Label(control_frame, text="Zaman Dilimi:").grid(row=0, column=2, padx=5)
 timeframe_var = tk.StringVar()
 timeframe_combo = ttk.Combobox(control_frame, textvariable=timeframe_var, values=[
@@ -152,11 +152,11 @@ timeframe_combo = ttk.Combobox(control_frame, textvariable=timeframe_var, values
 timeframe_combo.grid(row=0, column=3, padx=5)
 timeframe_combo.current(3)
 
-# Göster butonu
+# Göster Butonu
 button = tk.Button(window, text="Veriyi Göster", command=show_chart)
 button.pack(pady=5)
 
-# Grafik alanı
+# Grafik Alanı
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=True)
 
