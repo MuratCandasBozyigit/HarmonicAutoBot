@@ -126,7 +126,7 @@ window.geometry("1920x1080")
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
 
-tk.Label(control_frame, text="Hesap Bakiyesi:").grid(row=0, column=4, padx=5)
+#tk.Label(control_frame, text="Hesap Bakiyesi:").grid(row=0, column=4, padx=5)
 
 tk.Label(control_frame, text="Coin (örn: BTC veya BTC/USDT):").grid(row=0, column=0, padx=5)
 symbol_var = tk.StringVar()
