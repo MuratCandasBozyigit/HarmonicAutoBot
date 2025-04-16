@@ -5,7 +5,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from indicators.ema import ema
+from indicators.emaMurtaza import murtaza  # Sadece bu kaldı
 
 # Binance bağlantısı (Futures)
 exchange = ccxt.binance({
@@ -19,22 +19,24 @@ window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
 
-# EMA çizimi aktif mi? (Ayarlar)
-draw_ema = tk.BooleanVar(value=True)  # Başlangıçta EMA çizilsin
+draw_ema = tk.BooleanVar(value=True)
 
-# Veri çekme fonksiyonu
-def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=100):
+def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=500):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
         df.set_index("timestamp", inplace=True)
+        df = df.dropna()
+        if df.empty or len(df) < 200:
+            print(f"[get_ohlcv] Veri yetersiz: {len(df)} bar")
+            return None
         return df
     except Exception as e:
         messagebox.showerror("Hata", f"Veri çekilirken hata oluştu:\n{str(e)}")
+        print(f"[get_ohlcv] {type(e).__name__}: {e}")
         return None
 
-# Grafik çizme fonksiyonu
 def show_chart(event=None):
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
@@ -45,17 +47,21 @@ def show_chart(event=None):
         return
 
     df = get_ohlcv(symbol, timeframe)
-    if df is not None:
-        # Önceki grafiği temizle
-        for widget in chart_frame.winfo_children():
-            widget.destroy()
+    if df is None or df.empty:
+        messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
+        return
 
-        # EMA'yı çizip çizmeme kontrolü
-        apds = []
-        if draw_ema.get():  # Eğer EMA çizimi aktifse
-            apds = ema(df)
+    for widget in chart_frame.winfo_children():
+        widget.destroy()
 
-        # Grafik oluştur
+    apds = []
+    if draw_ema.get():
+        try:
+            apds += murtaza(df)
+        except Exception as e:
+            print(f"[murtaza] {type(e).__name__}: {e}")
+
+    try:
         fig, axlist = mpf.plot(
             df,
             type='candle',
@@ -66,16 +72,24 @@ def show_chart(event=None):
             addplot=apds if apds else [],
             returnfig=True
         )
+    except Exception as e:
+        print(f"[mplfinance.plot] {type(e).__name__}: {e}")
+        messagebox.showerror("Hata", f"Grafik çiziminde hata:\n{type(e).__name__}: {e}")
+        return
 
+    try:
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
         canvas.draw()
         widget = canvas.get_tk_widget()
         widget.pack(fill="both", expand=True)
+    except Exception as e:
+        print(f"[FigureCanvasTkAgg] {type(e).__name__}: {e}")
+        return
 
-        ax = axlist[0]
+    ax = axlist[0]
 
-        # Zoom (Ctrl + scroll)
-        def on_scroll(event):
+    def on_scroll(event):
+        try:
             if event.state & 0x0004:
                 x_min, x_max = ax.get_xlim()
                 x_range = x_max - x_min
@@ -85,25 +99,27 @@ def show_chart(event=None):
                 else:
                     ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
                 canvas.draw_idle()
+        except Exception as e:
+            print(f"[on_scroll] {type(e).__name__}: {e}")
 
-        widget.bind("<MouseWheel>", on_scroll)
+    widget.bind("<MouseWheel>", on_scroll)
 
-        # Sürükleme (sol tık)
+    is_dragging = False
+    last_x = None
+    last_y = None
+
+    def on_press(event):
+        nonlocal is_dragging, last_x, last_y
+        is_dragging = True
+        last_x = event.x
+        last_y = event.y
+
+    def on_release(event):
+        nonlocal is_dragging
         is_dragging = False
-        last_x = None
-        last_y = None
 
-        def on_press(event):
-            nonlocal is_dragging, last_x, last_y
-            is_dragging = True
-            last_x = event.x
-            last_y = event.y
-
-        def on_release(event):
-            nonlocal is_dragging
-            is_dragging = False
-
-        def on_motion(event):
+    def on_motion(event):
+        try:
             nonlocal is_dragging, last_x, last_y
             if is_dragging:
                 dx = event.x - last_x
@@ -121,10 +137,12 @@ def show_chart(event=None):
                 ax.set_ylim(y_min + pan_y, y_max + pan_y)
 
                 canvas.draw_idle()
+        except Exception as e:
+            print(f"[on_motion] {type(e).__name__}: {e}")
 
-        widget.bind("<ButtonPress-1>", on_press)
-        widget.bind("<ButtonRelease-1>", on_release)
-        widget.bind("<B1-Motion>", on_motion)
+    widget.bind("<ButtonPress-1>", on_press)
+    widget.bind("<ButtonRelease-1>", on_release)
+    widget.bind("<B1-Motion>", on_motion)
 
 # Kontroller
 control_frame = tk.Frame(window)
@@ -150,11 +168,9 @@ tk.Button(control_frame, text="Veriyi Göster", command=show_chart).grid(row=0, 
 settings_frame = tk.Frame(window)
 settings_frame.pack(pady=10)
 
-# EMA çizimi kontrolü
 ema_checkbutton = tk.Checkbutton(settings_frame, text="EMA Çizimini Göster", variable=draw_ema)
 ema_checkbutton.pack()
 
-# Grafik alanı
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=True)
 
