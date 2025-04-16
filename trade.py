@@ -5,7 +5,10 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+# Custom indicator imports
 from indicators.ema import ema
+#from indicators.harmonic import harmonic
 
 # Binance bağlantısı (Futures)
 exchange = ccxt.binance({
@@ -20,7 +23,7 @@ window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
 
 # EMA çizimi aktif mi? (Ayarlar)
-draw_ema = tk.BooleanVar(value=True)  # Başlangıçta EMA çizilsin
+draw_ema = tk.BooleanVar(value=True)
 
 # Veri çekme fonksiyonu
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=100):
@@ -46,16 +49,18 @@ def show_chart(event=None):
 
     df = get_ohlcv(symbol, timeframe)
     if df is not None:
-        # Önceki grafiği temizle
         for widget in chart_frame.winfo_children():
             widget.destroy()
 
-        # EMA'yı çizip çizmeme kontrolü
         apds = []
-        if draw_ema.get():  # Eğer EMA çizimi aktifse
+        if draw_ema.get():
             apds = ema(df)
 
-        # Grafik oluştur
+        harmonic_patterns = harmonic(df)
+        print("Tespit Edilen Harmonik Desenler:", harmonic_patterns)
+        if harmonic_patterns:
+            apds.extend(harmonic_patterns)
+
         fig, axlist = mpf.plot(
             df,
             type='candle',
@@ -74,7 +79,6 @@ def show_chart(event=None):
 
         ax = axlist[0]
 
-        # Zoom (Ctrl + scroll)
         def on_scroll(event):
             if event.state & 0x0004:
                 x_min, x_max = ax.get_xlim()
@@ -88,7 +92,6 @@ def show_chart(event=None):
 
         widget.bind("<MouseWheel>", on_scroll)
 
-        # Sürükleme (sol tık)
         is_dragging = False
         last_x = None
         last_y = None
@@ -150,9 +153,7 @@ tk.Button(control_frame, text="Veriyi Göster", command=show_chart).grid(row=0, 
 settings_frame = tk.Frame(window)
 settings_frame.pack(pady=10)
 
-# EMA çizimi kontrolü
-ema_checkbutton = tk.Checkbutton(settings_frame, text="EMA Çizimini Göster", variable=draw_ema)
-ema_checkbutton.pack()
+tk.Checkbutton(settings_frame, text="EMA Çizimini Göster", variable=draw_ema).pack()
 
 # Grafik alanı
 chart_frame = tk.Frame(window)
