@@ -40,7 +40,7 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=500):
 
 def detect_and_draw_harmonics(df, ax):
     from matplotlib.lines import Line2D
-    window = 150  # kaç bar geri dönüp pattern bakacağız
+    window = 50  # kaç bar geri dönüp pattern bakacağız
 
     for i in range(len(df) - 5, window, -1):  # geriye doğru tarar
         try:
@@ -75,7 +75,7 @@ def detect_and_draw_harmonics(df, ax):
                 ax.text(dX, dY, f"{detected}", color='black', fontsize=9, weight='bold')
 
                 print(f"Harmonik Pattern: {detected} @ Index {dX}")
-               # break  # sadece bir pattern çiz
+                break  # sadece bir pattern çiz
 
         except Exception as e:
             print(f"[harmonic_draw] {type(e).__name__}: {e}")
