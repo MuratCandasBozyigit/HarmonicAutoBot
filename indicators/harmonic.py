@@ -133,7 +133,6 @@ def get_prz_levels(pattern_type: int, xY: float, aY: float, bY: float, cY: float
     return bc_u, bc_l, xa_u, xa_l
 
 # PRZ score
-
 def prz_score(xY, aY, *levels):
     h = abs(aY - xY)
     valid_levels = [l for l in levels if l is not None]
@@ -151,7 +150,6 @@ def prz_score(xY, aY, *levels):
     return score, best_pair[0], best_pair[1]
 
 # Harmonic score
-
 def harmonic_score(tp, xX, xY, aX, aY, bX, bY, cX, cY, dX=None, dY=None):
     xa = abs(xY - aY)
     ab = abs(aY - bY)
