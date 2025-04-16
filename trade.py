@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
-#indicators.ema.emaMurtaza import murtaza 
+from indicators.ema.emaMurtaza import murtaza 
 
 # Binance bağlantısı (Futures)
 exchange = ccxt.binance({
@@ -75,7 +75,7 @@ def detect_and_draw_harmonics(df, ax):
                 ax.text(dX, dY, f"{detected}", color='cyan', fontsize=9, weight='bold')
 
                 print(f"Harmonik Pattern: {detected} @ Index {dX}")
-                break  # sadece bir pattern çiz
+               # break  # sadece bir pattern çiz
 
         except Exception as e:
             print(f"[harmonic_draw] {type(e).__name__}: {e}")
