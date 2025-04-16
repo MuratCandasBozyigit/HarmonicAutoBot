@@ -164,7 +164,7 @@ timeframe_combo.current(3)
 
 tk.Button(control_frame, text="Veriyi Göster", command=show_chart).grid(row=0, column=4, padx=5)
 
-# Ayarlar sekmesi
+# Ayarlar sekmesi 
 settings_frame = tk.Frame(window)
 settings_frame.pack(pady=10)
 
