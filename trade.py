@@ -5,7 +5,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from indicators.ema import ema 
+from indicators.ema import ema
 
 # Binance bağlantısı (Futures)
 exchange = ccxt.binance({
@@ -13,6 +13,14 @@ exchange = ccxt.binance({
         'defaultType': 'future'
     }
 })
+
+# Arayüz
+window = tk.Tk()
+window.title("Harmonic Gözlem Paneli - v0.4")
+window.geometry("1920x1080")
+
+# EMA çizimi aktif mi? (Ayarlar)
+draw_ema = tk.BooleanVar(value=True)  # Başlangıçta EMA çizilsin
 
 # Veri çekme fonksiyonu
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=100):
@@ -42,8 +50,10 @@ def show_chart(event=None):
         for widget in chart_frame.winfo_children():
             widget.destroy()
 
-        # EMA'ları hesapla ve çiz (indicators/ema.py'den geliyor)
-        apds = ema(df)
+        # EMA'yı çizip çizmeme kontrolü
+        apds = []
+        if draw_ema.get():  # Eğer EMA çizimi aktifse
+            apds = ema(df)
 
         # Grafik oluştur
         fig, axlist = mpf.plot(
@@ -116,11 +126,6 @@ def show_chart(event=None):
         widget.bind("<ButtonRelease-1>", on_release)
         widget.bind("<B1-Motion>", on_motion)
 
-# Arayüz
-window = tk.Tk()
-window.title("Harmonic Gözlem Paneli - v0.4")
-window.geometry("1920x1080")
-
 # Kontroller
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
@@ -140,6 +145,14 @@ timeframe_combo.grid(row=0, column=3, padx=5)
 timeframe_combo.current(3)
 
 tk.Button(control_frame, text="Veriyi Göster", command=show_chart).grid(row=0, column=4, padx=5)
+
+# Ayarlar sekmesi
+settings_frame = tk.Frame(window)
+settings_frame.pack(pady=10)
+
+# EMA çizimi kontrolü
+ema_checkbutton = tk.Checkbutton(settings_frame, text="EMA Çizimini Göster", variable=draw_ema)
+ema_checkbutton.pack()
 
 # Grafik alanı
 chart_frame = tk.Frame(window)
