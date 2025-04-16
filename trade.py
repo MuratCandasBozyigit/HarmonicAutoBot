@@ -5,7 +5,8 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from indicators.emaMurtaza import murtaza  # Sadece bu kaldı
+from indicators.harmonic import harmonic_xabcd_validate
+#indicators.ema.emaMurtaza import murtaza 
 
 # Binance bağlantısı (Futures)
 exchange = ccxt.binance({
@@ -36,6 +37,48 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=500):
         messagebox.showerror("Hata", f"Veri çekilirken hata oluştu:\n{str(e)}")
         print(f"[get_ohlcv] {type(e).__name__}: {e}")
         return None
+
+def detect_and_draw_harmonics(df, ax):
+    from matplotlib.lines import Line2D
+    window = 150  # kaç bar geri dönüp pattern bakacağız
+
+    for i in range(len(df) - 5, window, -1):  # geriye doğru tarar
+        try:
+            x = df.iloc[i - 4]
+            a = df.iloc[i - 3]
+            b = df.iloc[i - 2]
+            c = df.iloc[i - 1]
+            d = df.iloc[i]
+
+            xX, xY = i - 4, x['low']
+            aX, aY = i - 3, a['high']
+            bX, bY = i - 2, b['low']
+            cX, cY = i - 1, c['high']
+            dX, dY = i, d['low']
+
+            result = harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
+            is_valid, gart, bat, bfly, crab, shark, cyph = result
+
+            if is_valid:
+                pattern_name = ["Gartley", "Bat", "Butterfly", "Crab", "Shark", "Cypher"]
+                pattern_type = [gart, bat, bfly, crab, shark, cyph]
+                detected = pattern_name[pattern_type.index(True)]
+
+                # Noktaları çiz
+                points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
+                xs, ys = zip(*points)
+                ax.plot(xs, ys, color='magenta', linewidth=2)
+                for label, (px, py) in zip("XABCD", points):
+                    ax.text(px, py, label, color='white', fontsize=9, weight='bold')
+
+                # Pattern adını yaz
+                ax.text(dX, dY, f"{detected}", color='cyan', fontsize=9, weight='bold')
+
+                print(f"Harmonik Pattern: {detected} @ Index {dX}")
+                break  # sadece bir pattern çiz
+
+        except Exception as e:
+            print(f"[harmonic_draw] {type(e).__name__}: {e}")
 
 def show_chart(event=None):
     raw_symbol = symbol_var.get().strip().upper()
@@ -85,8 +128,15 @@ def show_chart(event=None):
     except Exception as e:
         print(f"[FigureCanvasTkAgg] {type(e).__name__}: {e}")
         return
-
+    
     ax = axlist[0]
+
+    try:
+        detect_and_draw_harmonics(df, ax)
+        canvas.draw_idle()
+    except Exception as e:
+        print(f"[harmonic_chart] {type(e).__name__}: {e}")
+
 
     def on_scroll(event):
         try:
