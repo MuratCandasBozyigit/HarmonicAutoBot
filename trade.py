@@ -5,6 +5,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from indicators.ema import ema 
 
 # Binance bağlantısı (Futures)
 exchange = ccxt.binance({
@@ -12,14 +13,6 @@ exchange = ccxt.binance({
         'defaultType': 'future'
     }
 })
-
-# EMA ayarları
-ema_settings = {
-    "show_ema50": True,
-    "ema50_val": 50,
-    "show_ema200": True,
-    "ema200_val": 200
-}
 
 # Veri çekme fonksiyonu
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=100):
@@ -49,14 +42,8 @@ def show_chart(event=None):
         for widget in chart_frame.winfo_children():
             widget.destroy()
 
-        # EMA'ları hesapla ve çiz
-        apds = []
-        if ema_settings["show_ema50"]:
-            df["EMA50"] = df["close"].ewm(span=ema_settings["ema50_val"], adjust=False).mean()
-            apds.append(mpf.make_addplot(df["EMA50"], color='blue', width=1.2))
-        if ema_settings["show_ema200"]:
-            df["EMA200"] = df["close"].ewm(span=ema_settings["ema200_val"], adjust=False).mean()
-            apds.append(mpf.make_addplot(df["EMA200"], color='red', width=1.2))
+        # EMA'ları hesapla ve çiz (indicators/ema.py'den geliyor)
+        apds = ema(df)
 
         # Grafik oluştur
         fig, axlist = mpf.plot(
@@ -77,7 +64,7 @@ def show_chart(event=None):
 
         ax = axlist[0]
 
-        # Zoom işlemi (Ctrl + scroll)
+        # Zoom (Ctrl + scroll)
         def on_scroll(event):
             if event.state & 0x0004:
                 x_min, x_max = ax.get_xlim()
@@ -129,43 +116,6 @@ def show_chart(event=None):
         widget.bind("<ButtonRelease-1>", on_release)
         widget.bind("<B1-Motion>", on_motion)
 
-# EMA Ayar Paneli
-def open_ema_settings():
-    settings_win = tk.Toplevel(window)
-    settings_win.title("EMA Ayarları")
-    settings_win.geometry("300x200")
-
-    # EMA 50
-    show_50 = tk.BooleanVar(value=ema_settings["show_ema50"])
-    tk.Checkbutton(settings_win, text="EMA 50 Göster", variable=show_50).pack(anchor="w", pady=2)
-
-    tk.Label(settings_win, text="EMA 50 Değeri:").pack()
-    ema50_entry = tk.Entry(settings_win)
-    ema50_entry.insert(0, str(ema_settings["ema50_val"]))
-    ema50_entry.pack()
-
-    # EMA 200
-    show_200 = tk.BooleanVar(value=ema_settings["show_ema200"])
-    tk.Checkbutton(settings_win, text="EMA 200 Göster", variable=show_200).pack(anchor="w", pady=2)
-
-    tk.Label(settings_win, text="EMA 200 Değeri:").pack()
-    ema200_entry = tk.Entry(settings_win)
-    ema200_entry.insert(0, str(ema_settings["ema200_val"]))
-    ema200_entry.pack()
-
-    def save_settings():
-        try:
-            ema_settings["show_ema50"] = show_50.get()
-            ema_settings["ema50_val"] = int(ema50_entry.get())
-            ema_settings["show_ema200"] = show_200.get()
-            ema_settings["ema200_val"] = int(ema200_entry.get())
-            settings_win.destroy()
-            show_chart()  # Güncellenmiş ayarlarla yeniden çiz
-        except ValueError:
-            messagebox.showerror("Hata", "EMA değerleri sayısal olmalıdır.")
-
-    tk.Button(settings_win, text="Kaydet", command=save_settings).pack(pady=10)
-
 # Arayüz
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.4")
@@ -189,9 +139,7 @@ timeframe_combo = ttk.Combobox(control_frame, textvariable=timeframe_var, values
 timeframe_combo.grid(row=0, column=3, padx=5)
 timeframe_combo.current(3)
 
-# Göster ve Ayarlar butonları
 tk.Button(control_frame, text="Veriyi Göster", command=show_chart).grid(row=0, column=4, padx=5)
-tk.Button(control_frame, text="EMA Ayarları ⚙️", command=open_ema_settings).grid(row=0, column=5, padx=5)
 
 # Grafik alanı
 chart_frame = tk.Frame(window)
