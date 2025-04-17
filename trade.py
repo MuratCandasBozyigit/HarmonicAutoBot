@@ -172,8 +172,6 @@ def show_chart(event=None):
 
         except Exception as e:
             print(f"[on_scroll] {type(e).__name__}: {e}")
-
-
     widget.bind("<MouseWheel>", on_scroll)
 
     is_dragging = False
@@ -248,7 +246,7 @@ ema_checkbutton = tk.Checkbutton(settings_frame, text="EMA Çizimini Göster", v
 ema_checkbutton.pack()
 
 chart_frame = tk.Frame(window)
-chart_frame.pack(fill="both", expand=True)
+chart_frame.pack(fill="both", expand=False)
 
 # API anahtarlarını buraya yaz (SABİT ve DİKKATLİ KULLAN!)
 api_key = 'AB9ABNvPdaqb1Se7YNBkNU254LYZVCNEpvLHVfvkEsl2N9ySmiDxDfn7KfV0sPtn'
