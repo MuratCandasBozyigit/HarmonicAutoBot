@@ -72,7 +72,9 @@ def detect_and_draw_harmonics(df, ax):
                     ax.text(px, py, label, color='black', fontsize=9, weight='600')
                 ax.text(dX, dY, f"{detected}", color='brown', fontsize=12, weight='bold')
 
-                print(f"Harmonik Pattern: {detected} @ Index {dX}")
+            print(f"Harmonik Pattern: {detected} @ Index {dX}")
+               # break 
+
         except Exception as e:
             print(f"[harmonic_draw] {type(e).__name__}: {e}")
 
