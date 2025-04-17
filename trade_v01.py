@@ -2,7 +2,6 @@
 import pandas as pd
 import mplfinance as mpf
 import tkinter as tk
-import random
 import gc
 import psutil, os
 import sys
@@ -11,9 +10,8 @@ import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
-from mods.percentage import toggle_percent_mode
+#from folders.ema.emaMurtaza import EMA
 from datetime import datetime, timedelta,timezone
-from turtle import clear
 
 exchange = ccxt.binance({
     'apiKey':'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
@@ -59,7 +57,7 @@ def monitor_ram():
     # Her 5 saniyede bir tekrar et
     window.after(5000, monitor_ram)
 
-def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
+def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
@@ -111,19 +109,18 @@ def detect_and_draw_recent_harmonics(df, ax):
                 ax.plot(xs, ys, color='darkgreen', linewidth=1.4)
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
-                ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
-
+                #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
                 if dX == len(df) - 1 and emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if emir_acik:
                         if pattern_id not in opened_patterns:
-                            open_position(dY)
+                            open_position(dY, symbol)
                             opened_patterns.add(pattern_id)
+                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
                     else:
                         add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
-                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
 
         gc.collect()
     except Exception as e:
@@ -132,6 +129,7 @@ def detect_and_draw_recent_harmonics(df, ax):
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
     def clear_canvas():
+        global canvas, fig, ax
         if canvas:
             canvas.get_tk_widget().destroy()
             canvas = None
@@ -186,7 +184,6 @@ def show_chart(event=None):
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
     gc.collect()
-
 def update_last_candle():
     global df, ax, canvas, symbol
     if df is None or symbol is None:
@@ -219,7 +216,6 @@ def update_last_candle():
         gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
-
 def auto_refresh_chart():
     global last_candle_time
 
@@ -253,14 +249,14 @@ def auto_refresh_chart():
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
 
     window.after(1000, auto_refresh_chart)
-
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
 
-def open_position(entry_price):
+def open_position(entry_price, symbol):
     global aktif_emir_id
 
     try:
+        usdt_miktarı:1
         symbol_fut = symbol.replace("/", "").upper()
         miktar = round(1/ entry_price, 3)
 
@@ -333,11 +329,19 @@ def toggle_emir():
     global emir_acik
     emir_acik = not emir_acik
     emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
+    log_emir_durumu()
+
+def log_emir_durumu():
+    if emir_acik:
+        print("[Emir Kontrol] ✅ Emir aranıyor...")
+    else:
+        print("[Emir Kontrol] ⛔ Emir modu kapalı.")
+
 
 emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
 emir_btn.grid(row=0, column=7, padx=10)
 
 
-#  monitor_ram()
+#monitor_ram()
 auto_refresh_chart()
 window.mainloop()
