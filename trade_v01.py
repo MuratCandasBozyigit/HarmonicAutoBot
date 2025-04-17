@@ -10,7 +10,7 @@ import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
-from mods.percentage import toggle_percent_mode
+#from folders.ema.emaMurtaza import EMA
 from datetime import datetime, timedelta,timezone
 
 exchange = ccxt.binance({
@@ -109,7 +109,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 ax.plot(xs, ys, color='darkgreen', linewidth=1.4)
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
-                ax.text(dX, dY, f"                  {detected}", color='maroon', fontsize=9, weight='400')
+                #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
                 if dX == len(df) - 1 and emir_acik:
