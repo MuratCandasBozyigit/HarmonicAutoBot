@@ -109,7 +109,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 ax.plot(xs, ys, color='darkgreen', linewidth=1.4)
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
-                ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
+                ax.text(dX, dY, f"{detected}", color='maroon', fontsize=5, weight='400')
 
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
