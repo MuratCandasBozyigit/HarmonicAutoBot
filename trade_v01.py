@@ -6,7 +6,9 @@ import random
 import gc
 import psutil, os
 import sys
+import time
 import pygame
+import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
@@ -26,6 +28,9 @@ exchange = ccxt.binance({
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.5")
 window.geometry("1920x1080")
+
+opened_patterns = set()  
+
 
 #pygame.mixer.init()
 emir_acik = False
@@ -84,7 +89,6 @@ def add_log(msg):
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
-        # Önceki çizimleri temizle
         for artist in ax.lines + ax.texts:
             artist.remove()
 
@@ -105,6 +109,8 @@ def detect_and_draw_recent_harmonics(df, ax):
             is_valid, gart, bat, bfly, crab, shark, cyph = result
 
             if is_valid:
+                   
+
                 pattern_name = ["Gartley", "Bat", "Butterfly", "Crab", "Shark", "Cypher"]
                 pattern_type = [gart, bat, bfly, crab, shark, cyph]
                 detected = pattern_name[pattern_type.index(True)]
@@ -112,7 +118,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 # Çizimi yap
                 points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
                 xs, ys = zip(*points)
-                ax.plot(xs, ys, color='darkgreen', linewidth=1.8)
+                ax.plot(xs, ys, color='darkgreen', linewidth=1.4)
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
@@ -125,8 +131,14 @@ def detect_and_draw_recent_harmonics(df, ax):
                 #     add_log(f"[Ses Hatası] {type(e).__name__}: {e}")
 
                 # Terminal loguna ekle
+                if dX == len(df) - 2:
+                    pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
+                    if pattern_id not in opened_patterns:
+                        open_position(dY)
+                        opened_patterns.add(pattern_id)
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
+        gc.collect() 
     except Exception as e:
         add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 
@@ -255,9 +267,58 @@ def auto_refresh_chart():
 
     window.after(1000, auto_refresh_chart)
 
-
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
+
+def open_position(entry_price):
+    global aktif_emir_id
+   
+
+    try:
+        symbol_fut = symbol.replace("/", "").upper()
+        miktar = round(0.5 / entry_price, 3)
+
+        # Pozisyon aç
+        exchange.set_margin_mode('isolated', symbol=symbol)
+        exchange.set_leverage(15, symbol=symbol)
+        order = exchange.create_order(
+            symbol=symbol,
+            type='market',
+            side='buy',
+            amount=miktar,
+            params={'positionSide': 'LONG', 'leverage': 15, 'marginType': 'isolated'}
+        )
+        aktif_emir_id = order['id']
+        add_log(f"[ORDER] {symbol_fut} - LONG pozisyon açıldı: {miktar} adet @ {entry_price}")
+
+        # TP hesapla
+        tp_price = round(entry_price * 1.005, 2)
+        add_log(f"[TP] {symbol_fut} - TP hedefi: {tp_price}")
+
+        def monitor_tp():
+            while True:
+                try:
+                    ticker = exchange.fetch_ticker(symbol)
+                    current_price = ticker['last']
+                    if current_price >= tp_price:
+                        exchange.create_order(
+                            symbol=symbol,
+                            type='market',
+                            side='sell',
+                            amount=miktar,
+                            params={'reduceOnly': True, 'positionSide': 'LONG'}
+                        )
+                        add_log(f"[TP] {symbol_fut} - TP hedefi vuruldu. Pozisyon kapandı.")
+                        break
+                    time.sleep(2)
+                except Exception as e:
+                    add_log(f"[TP Watcher] {type(e).__name__}: {e}")
+                    break
+
+        threading.Thread(target=monitor_tp, daemon=True).start()
+
+    except Exception as e:
+        add_log(f"[Pozisyon Açma] {type(e).__name__}: {e}")
 
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
