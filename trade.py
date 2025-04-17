@@ -93,6 +93,51 @@ def show_chart(event=None):
     if df is None or df.empty:
         messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
+    
+    def update_last_candle():
+        try:
+            ticker = exchange.fetch_ticker(current_symbol.replace("/", ""))
+            price = ticker['last']
+            now = pd.Timestamp.utcnow()
+
+            last_time = current_df.index[-1]
+            timeframe_seconds = int(pd.Timedelta(current_timeframe).total_seconds())
+            new_time = pd.Timestamp((now.value // (timeframe_seconds * 1e9)) * (timeframe_seconds * 1e9))
+
+            if new_time > last_time:
+                # Yeni bir mum başlat
+                new_row = pd.Series({
+                    'open': price,
+                    'high': price,
+                    'low': price,
+                    'close': price
+                }, name=new_time)
+                current_df.loc[new_time] = new_row
+            else:
+                # Mevcut son mumu güncelle
+                current_df.iloc[-1]['close'] = price
+                current_df.iloc[-1]['high'] = max(current_df.iloc[-1]['high'], price)
+                current_df.iloc[-1]['low'] = min(current_df.iloc[-1]['low'], price)
+
+            # Sadece çizimi güncelle (en son mum)
+            ax = axlist[0]
+            ax.lines.clear()
+            ax.patches.clear()
+            mpf.plot(current_df, type='candle', style='yahoo', ax=ax, volume=False)
+            canvas.draw_idle()
+
+        except Exception as e:
+            print(f"[update_last_candle] {type(e).__name__}: {e}")
+    
+    # Her 1 saniyede bir çağır
+    chart_frame.after(1000, update_last_candle)
+
+
+    global current_df, current_symbol, current_timeframe
+    current_symbol = symbol
+    current_timeframe = timeframe
+    current_df = df.copy()
+
 
     for widget in chart_frame.winfo_children():
         widget.destroy()
@@ -193,6 +238,8 @@ def show_chart(event=None):
     widget.bind("<ButtonPress-1>", on_press)
     widget.bind("<ButtonRelease-1>", on_release)
     widget.bind("<B1-Motion>", on_motion)
+    update_last_candle()
+
 
 # Kontroller
 control_frame = tk.Frame(window)
@@ -236,6 +283,7 @@ trading_exchange = ccxt.binance({
         'defaultType': 'future'
     }
 })
+
 
 
 
