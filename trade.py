@@ -21,6 +21,7 @@ window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
 
 draw_ema = tk.BooleanVar(value=True)
+should_auto_refresh = tk.BooleanVar(value=True)
 
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
     try:
@@ -40,9 +41,9 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
 
 def detect_and_draw_harmonics(df, ax):
     from matplotlib.lines import Line2D
-    window = 50  # kaç bar geri dönüp pattern bakacağız
+    window = 50
 
-    for i in range(len(df) - 5, window, -1):  # geriye doğru tarar
+    for i in range(len(df) - 5, window, -1):
         try:
             x = df.iloc[i - 4]
             a = df.iloc[i - 3]
@@ -64,19 +65,14 @@ def detect_and_draw_harmonics(df, ax):
                 pattern_type = [gart, bat, bfly, crab, shark, cyph]
                 detected = pattern_name[pattern_type.index(True)]
 
-                # Noktaları çiz
                 points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
                 xs, ys = zip(*points)
                 ax.plot(xs, ys, color='darkgreen', linewidth=2)
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=9, weight='600')
-
-                # Pattern adını yaz
                 ax.text(dX, dY, f"{detected}", color='brown', fontsize=12, weight='bold')
 
                 print(f"Harmonik Pattern: {detected} @ Index {dX}")
-               # break  # sadece bir pattern çiz
-
         except Exception as e:
             print(f"[harmonic_draw] {type(e).__name__}: {e}")
 
@@ -128,14 +124,13 @@ def show_chart(event=None):
     except Exception as e:
         print(f"[FigureCanvasTkAgg] {type(e).__name__}: {e}")
         return
-    
+
     ax = axlist[0]
     try:
         detect_and_draw_harmonics(df, ax)
         canvas.draw_idle()
     except Exception as e:
         print(f"[harmonic_chart] {type(e).__name__}: {e}")
-
 
     def on_scroll(event):
         try:
@@ -144,23 +139,18 @@ def show_chart(event=None):
             x_range = x_max - x_min
             y_range = y_max - y_min
 
-            # Shift: Mumları inceltip uzat (Yatay zoom)
             if event.state & 0x0001:
                 zoom_factor = 0.05 * x_range
                 if event.delta > 0:
                     ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
                 else:
                     ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
-
-            # Alt: Dikey zoom (fiyat ölçeğiyle oyna)
             elif event.state & 0x0008:
                 zoom_factor = 0.1 * y_range
                 if event.delta > 0:
                     ax.set_ylim(y_min + zoom_factor, y_max - zoom_factor)
                 else:
                     ax.set_ylim(y_min - zoom_factor, y_max + zoom_factor)
-
-            # Ctrl: Normal yatay zoom
             elif event.state & 0x0004:
                 zoom_factor = 0.1 * x_range
                 if event.delta > 0:
@@ -169,7 +159,6 @@ def show_chart(event=None):
                     ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
 
             canvas.draw_idle()
-
         except Exception as e:
             print(f"[on_scroll] {type(e).__name__}: {e}")
     widget.bind("<MouseWheel>", on_scroll)
@@ -214,9 +203,16 @@ def show_chart(event=None):
     widget.bind("<ButtonRelease-1>", on_release)
     widget.bind("<B1-Motion>", on_motion)
 
+def pause_refresh(event):
+    should_auto_refresh.set(False)
+
+def resume_refresh(event):
+    should_auto_refresh.set(True)
+
 def auto_refresh_chart():
-    show_chart()
-    window.after(1000, auto_refresh_chart)  # 1000ms = 1 saniye sonra tekrar çağır
+    if should_auto_refresh.get():
+        show_chart()
+    window.after(1000, auto_refresh_chart)
 
 # Kontroller
 control_frame = tk.Frame(window)
@@ -231,8 +227,10 @@ symbol_var = tk.StringVar()
 symbol_entry = tk.Entry(control_frame, textvariable=symbol_var, width=20)
 symbol_entry.grid(row=0, column=1, padx=5)
 symbol_entry.insert(0, "BTC")
-symbol_entry.bind("<FocusIn>", lambda e: symbol_entry.delete(0, tk.END))
-symbol_entry.bind("<Return>", show_chart)
+
+symbol_entry.bind("<FocusIn>", pause_refresh)
+symbol_entry.bind("<FocusOut>", resume_refresh)
+symbol_entry.bind("<Return>", lambda e: [show_chart(), resume_refresh(e)])
 
 tk.Label(control_frame, text="Zaman Dilimi:").grid(row=0, column=2, padx=5)
 timeframe_var = tk.StringVar()
@@ -240,9 +238,11 @@ timeframe_combo = ttk.Combobox(control_frame, textvariable=timeframe_var, values
 timeframe_combo.grid(row=0, column=3, padx=5)
 timeframe_combo.current(3)
 
+timeframe_combo.bind("<FocusIn>", pause_refresh)
+timeframe_combo.bind("<FocusOut>", resume_refresh)
+
 tk.Button(control_frame, text="Veriyi Göster", command=show_chart).grid(row=0, column=4, padx=5)
 
-# Ayarlar sekmesi 
 settings_frame = tk.Frame(window)
 settings_frame.pack(pady=10)
 
@@ -252,7 +252,6 @@ ema_checkbutton.pack()
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
 
-# API anahtarlarını buraya yaz (SABİT ve DİKKATLİ KULLAN!)
 api_key = 'AB9ABNvPdaqb1Se7YNBkNU254LYZVCNEpvLHVfvkEsl2N9ySmiDxDfn7KfV0sPtn'
 api_secret = 'GCWzeHX1UqFdIfct9pZUkdMIhHXyz1yL2Wo5oCOsWP0ZrmRJJzxMqHLRWghYizka'
 
