@@ -19,7 +19,7 @@ window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
 
 should_auto_refresh = tk.BooleanVar(value=True)
-
+last_candle_time = None 
 df = None
 canvas = None
 fig = None
@@ -146,9 +146,37 @@ def update_last_candle():
         print(f"[update_last_candle] {type(e).__name__}: {e}")
 
 def auto_refresh_chart():
-    if should_auto_refresh.get():
-        update_last_candle()
+    global last_candle_time
+
+    if not should_auto_refresh.get() or df is None:
+        window.after(1000, auto_refresh_chart)
+        return
+
+    try:
+        # Şu anki zaman ve son mumun zamanı
+        now = datetime.utcnow()
+        last_time = df.index[-1].to_pydatetime()
+
+        # Eğer yeni bir mum oluşmuşsa, tüm veriyi güncelle
+        if last_candle_time is None:
+            last_candle_time = last_time
+
+        # Timeframe'e göre mum süresi
+        tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
+        tf_seconds = tf_map.get(timeframe, 60)
+
+        if (now - last_candle_time).total_seconds() >= tf_seconds:
+            print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
+            show_chart()
+            last_candle_time = df.index[-1].to_pydatetime()
+        else:
+            update_last_candle()
+
+    except Exception as e:
+        print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
+
     window.after(1000, auto_refresh_chart)
+
 
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
