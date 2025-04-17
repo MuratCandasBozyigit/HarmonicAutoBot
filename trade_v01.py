@@ -56,6 +56,12 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
+        # Önceki çizimleri temizle
+        for artist in ax.lines + ax.texts:
+            artist.remove()
+
+        harmonic_logs = []  # Terminal logları
+        os.system('cls' if os.name == 'nt' else 'clear')
         for i in range(4, len(df)):
             x = df.iloc[i - 4]
             a = df.iloc[i - 3]
@@ -84,9 +90,15 @@ def detect_and_draw_recent_harmonics(df, ax):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
 
-                print(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
+                harmonic_logs.append(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
+
+        if harmonic_logs:
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print("\n".join(harmonic_logs))
+
     except Exception as e:
         print(f"[harmonic_draw] {type(e).__name__}: {e}")
+
 
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
