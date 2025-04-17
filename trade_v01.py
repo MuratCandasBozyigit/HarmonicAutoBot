@@ -27,7 +27,7 @@ window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.5")
 window.geometry("1920x1080")
 
-pygame.mixer.init()
+#pygame.mixer.init()
 should_auto_refresh = tk.BooleanVar(value=True)
 last_candle_time = None 
 df = None
@@ -115,12 +115,12 @@ def detect_and_draw_recent_harmonics(df, ax):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
 
-                # Yeni desen bulunduysa ses çal
-                try:
-                    pygame.mixer.music.load("alert.wav")
-                    pygame.mixer.music.play()
-                except Exception as e:
-                    add_log(f"[Ses Hatası] {type(e).__name__}: {e}")
+                # # Yeni desen bulunduysa ses çal
+                # try:
+                #     pygame.mixer.music.load("alert.wav")
+                #     pygame.mixer.music.play()
+                # except Exception as e:
+                #     add_log(f"[Ses Hatası] {type(e).__name__}: {e}")
 
                 # Terminal loguna ekle
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
