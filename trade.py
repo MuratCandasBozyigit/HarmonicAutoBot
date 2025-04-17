@@ -67,12 +67,12 @@ def detect_and_draw_harmonics(df, ax):
                 # Noktaları çiz
                 points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
                 xs, ys = zip(*points)
-                ax.plot(xs, ys, color='magenta', linewidth=2)
+                ax.plot(xs, ys, color='darkgreen', linewidth=2)
                 for label, (px, py) in zip("XABCD", points):
-                    ax.text(px, py, label, color='white', fontsize=9, weight='bold')
+                    ax.text(px, py, label, color='black', fontsize=9, weight='600')
 
                 # Pattern adını yaz
-                ax.text(dX, dY, f"{detected}", color='cyan', fontsize=9, weight='bold')
+                ax.text(dX, dY, f"{detected}", color='brown', fontsize=12, weight='bold')
 
                 print(f"Harmonik Pattern: {detected} @ Index {dX}")
                # break  # sadece bir pattern çiz
