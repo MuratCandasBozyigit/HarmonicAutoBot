@@ -110,7 +110,6 @@ def detect_and_draw_recent_harmonics(df, ax):
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"                  {detected}", color='maroon', fontsize=9, weight='400')
-
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
                 if dX == len(df) - 1 and emir_acik:
@@ -119,9 +118,9 @@ def detect_and_draw_recent_harmonics(df, ax):
                         if pattern_id not in opened_patterns:
                             open_position(dY)
                             opened_patterns.add(pattern_id)
+                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
                     else:
                         add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
-                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
 
         gc.collect()
     except Exception as e:
@@ -185,7 +184,6 @@ def show_chart(event=None):
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
     gc.collect()
-
 def update_last_candle():
     global df, ax, canvas, symbol
     if df is None or symbol is None:
@@ -218,7 +216,6 @@ def update_last_candle():
         gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
-
 def auto_refresh_chart():
     global last_candle_time
 
@@ -252,7 +249,6 @@ def auto_refresh_chart():
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
 
     window.after(1000, auto_refresh_chart)
-
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
 
@@ -260,8 +256,9 @@ def open_position(entry_price):
     global aktif_emir_id
 
     try:
+        usdt_miktarı:1
         symbol_fut = symbol.replace("/", "").upper()
-        miktar = round(1/ entry_price, 3)
+        miktar = round(usdt_miktarı/ entry_price, 3)
 
         # Pozisyon aç
         exchange.set_margin_mode('isolated', symbol=symbol)
@@ -332,6 +329,14 @@ def toggle_emir():
     global emir_acik
     emir_acik = not emir_acik
     emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
+    log_emir_durumu()
+
+def log_emir_durumu():
+    if emir_acik:
+        print("[Emir Kontrol] ✅ Emir aranıyor...")
+    else:
+        print("[Emir Kontrol] ⛔ Emir modu kapalı.")
+
 
 emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
 emir_btn.grid(row=0, column=7, padx=10)
