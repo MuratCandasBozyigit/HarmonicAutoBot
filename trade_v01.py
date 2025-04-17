@@ -29,12 +29,28 @@ ax = None
 symbol = None
 timeframe = None
 
+import sys
+
 def monitor_ram():
-    os.system('cls' if os.name == 'nt' else 'clear')  # Ekranı temizle
     process = psutil.Process(os.getpid())
     used_ram = process.memory_info().rss / 1024**2
-    print(f"[RAM Takip] Anlık RAM kullanımı: {used_ram:.2f} MB")
-    window.after(10000, monitor_ram)  # Her 10 saniyede bir tekrar et
+
+    # Terminalin en üst satırına RAM yaz
+    sys.stdout.write("\033[1;1H")  # 1. satır, 1. sütuna git
+    sys.stdout.write(f"[RAM Takip] Anlık RAM kullanımı: {used_ram:.2f} MB")
+    sys.stdout.flush()
+
+    # Altına çizgi çiz (2. satıra)
+    sys.stdout.write("\033[2;1H" + "-" * 80)
+    sys.stdout.flush()
+
+    # Pattern loglarını 3. satırdan itibaren bas
+    for i, line in enumerate(logs[-20:]):
+        sys.stdout.write(f"\033[{3+i};1H{line.ljust(80)}")
+    sys.stdout.flush()
+
+    # Her 5 saniyede bir tekrar et
+    window.after(5000, monitor_ram)
 
 
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
@@ -53,6 +69,11 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
         print(f"[get_ohlcv] {type(e).__name__}: {e}")
         return None
 
+logs = []  # Tüm terminal loglarını burada biriktireceğiz (global olarak)
+
+def add_log(msg):
+    logs.append(msg)
+
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
@@ -60,8 +81,6 @@ def detect_and_draw_recent_harmonics(df, ax):
         for artist in ax.lines + ax.texts:
             artist.remove()
 
-        harmonic_logs = []  # Terminal logları
-        os.system('cls' if os.name == 'nt' else 'clear')
         for i in range(4, len(df)):
             x = df.iloc[i - 4]
             a = df.iloc[i - 3]
@@ -83,6 +102,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 pattern_type = [gart, bat, bfly, crab, shark, cyph]
                 detected = pattern_name[pattern_type.index(True)]
 
+                # Çizimi yap
                 points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
                 xs, ys = zip(*points)
                 ax.plot(xs, ys, color='darkgreen', linewidth=1.8)
@@ -90,14 +110,11 @@ def detect_and_draw_recent_harmonics(df, ax):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
 
-                harmonic_logs.append(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
-
-        if harmonic_logs:
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print("\n".join(harmonic_logs))
+                # Terminal loguna ekle
+                add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
     except Exception as e:
-        print(f"[harmonic_draw] {type(e).__name__}: {e}")
+        add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 
 
 def show_chart(event=None):
