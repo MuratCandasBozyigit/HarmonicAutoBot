@@ -1,21 +1,25 @@
-﻿from turtle import clear
-import ccxt
+﻿import ccxt
 import pandas as pd
 import mplfinance as mpf
-from datetime import datetime, timedelta,timezone
 import tkinter as tk
 import random
+import gc
+import psutil, os
+import sys
+import pygame
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
 from mods.percentage import toggle_percent_mode
-import gc
-import psutil, os
-import sys
+from datetime import datetime, timedelta,timezone
+from turtle import clear
+
+
+
 
 exchange = ccxt.binance({
-    'api_key':'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
-    'secret_key':'6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag',
+    'apiKey':'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
+    'secret':'6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag',
     'options': {'defaultType': 'future'}
 })
 
@@ -23,6 +27,7 @@ window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.5")
 window.geometry("1920x1080")
 
+pygame.mixer.init()
 should_auto_refresh = tk.BooleanVar(value=True)
 last_candle_time = None 
 df = None
@@ -109,6 +114,13 @@ def detect_and_draw_recent_harmonics(df, ax):
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
+
+                # Yeni desen bulunduysa ses çal
+                try:
+                    pygame.mixer.music.load("alert.wav")
+                    pygame.mixer.music.play()
+                except Exception as e:
+                    add_log(f"[Ses Hatası] {type(e).__name__}: {e}")
 
                 # Terminal loguna ekle
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
