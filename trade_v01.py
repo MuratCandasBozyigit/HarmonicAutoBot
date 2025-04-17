@@ -14,7 +14,10 @@ import psutil, os
 import sys
 
 exchange = ccxt.binance({
-    'options': {'defaultType': 'future'}
+    'apiKey': 'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
+    'secret': '6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag',
+    'options': {'defaultType': 'future'},
+    'enableRateLimit': True
 })
 
 window = tk.Tk()
@@ -29,6 +32,7 @@ fig = None
 ax = None
 symbol = None
 timeframe = None
+open_trades = {}
 
 
 def monitor_ram():
@@ -99,6 +103,34 @@ def detect_and_draw_recent_harmonics(df, ax):
                 pattern_name = ["Gartley", "Bat", "Butterfly", "Crab", "Shark", "Cypher"]
                 pattern_type = [gart, bat, bfly, crab, shark, cyph]
                 detected = pattern_name[pattern_type.index(True)]
+                unique_key = f"{symbol}_{df.index[dX]}"
+            if unique_key not in open_trades:
+                open_trades[unique_key] = {}  # Rezerve et
+
+                direction = "buy" if dY < cY else "sell"
+                amount = 0.5
+                leverage = 15
+
+                place_market_order(symbol, direction, amount, leverage)
+
+                # Giriş fiyatı alınır
+                ticker = exchange.fetch_ticker(symbol)
+                entry_price = ticker['last']
+
+                # TP hesapla (%0.5)
+                tp_price = entry_price * 1.005 if direction == "buy" else entry_price * 0.995
+
+                # Trade’i kaydet
+                open_trades[unique_key] = {
+                    "side": direction,
+                    "entry": entry_price,
+                    "tp": tp_price,
+                    "amount": amount,
+                    "symbol": symbol
+                }
+
+                add_log(f"[TP Takip] {symbol} {direction} açıldı @ {entry_price:.2f}, TP: {tp_price:.2f}")
+
 
                 # Çizimi yap
                 points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
@@ -213,16 +245,12 @@ def auto_refresh_chart():
         return
 
     try:
-        # Şu anki zaman ve son mumun zamanı
         now = datetime.now(timezone.utc)
         last_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
 
-
-        # Eğer yeni bir mum oluşmuşsa, tüm veriyi güncelle
         if last_candle_time is None:
             last_candle_time = last_time
 
-        # Timeframe'e göre mum süresi
         tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
         tf_seconds = tf_map.get(timeframe, 60)
 
@@ -233,6 +261,25 @@ def auto_refresh_chart():
         else:
             update_last_candle()
 
+        # TP kontrolü burada olmalı
+        try:
+            for key, trade in list(open_trades.items()):
+                ticker = exchange.fetch_ticker(trade["symbol"])
+                last = ticker['last']
+
+                if (trade["side"] == "buy" and last >= trade["tp"]) or \
+                   (trade["side"] == "sell" and last <= trade["tp"]):
+                    close_side = "sell" if trade["side"] == "buy" else "buy"
+                    place_market_order(
+                        trade["symbol"], 
+                        close_side, 
+                        trade["amount"], 
+                        leverage=trade.get("leverage", 15)
+                    )
+                    add_log(f"[TP HIT] {trade['symbol']} kar alındı! Giriş: {trade['entry']:.2f}, Kapanış: {last:.2f}")
+                    del open_trades[key]
+        except Exception as e:
+            add_log(f"[TP-Kontrol] {type(e).__name__}: {e}")
 
     except Exception as e:
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
@@ -242,6 +289,22 @@ def auto_refresh_chart():
 
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
+
+def place_market_order(symbol, side, amount, leverage):
+    try:
+        market = exchange.market(symbol)
+        exchange.set_leverage(leverage, symbol)
+        exchange.set_margin_mode('isolated', symbol)
+
+        order = exchange.create_market_order(
+            symbol=symbol,
+            side=side,
+            amount=amount
+        )
+        add_log(f"[ORDER] {side.upper()} işlemi gönderildi: {amount} {symbol}")
+        print(order)
+    except Exception as e:
+        add_log(f"[ORDER ERROR] {type(e).__name__}: {e}")
 
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
