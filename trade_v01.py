@@ -11,13 +11,14 @@ from indicators.harmonic import harmonic_xabcd_validate
 from mods.percentage import toggle_percent_mode
 import gc
 import psutil, os
+import sys
 
 exchange = ccxt.binance({
     'options': {'defaultType': 'future'}
 })
 
 window = tk.Tk()
-window.title("Harmonic Gözlem Paneli - v0.4")
+window.title("Harmonic Gözlem Paneli - v0.5")
 window.geometry("1920x1080")
 
 should_auto_refresh = tk.BooleanVar(value=True)
@@ -29,7 +30,6 @@ ax = None
 symbol = None
 timeframe = None
 
-import sys
 
 def monitor_ram():
     process = psutil.Process(os.getpid())
@@ -52,7 +52,6 @@ def monitor_ram():
     # Her 5 saniyede bir tekrar et
     window.after(5000, monitor_ram)
 
-
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
@@ -69,8 +68,7 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
         print(f"[get_ohlcv] {type(e).__name__}: {e}")
         return None
 
-logs = []  # Tüm terminal loglarını burada biriktireceğiz (global olarak)
-
+logs = []  
 def add_log(msg):
     logs.append(msg)
 
@@ -115,7 +113,6 @@ def detect_and_draw_recent_harmonics(df, ax):
 
     except Exception as e:
         add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
-
 
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
