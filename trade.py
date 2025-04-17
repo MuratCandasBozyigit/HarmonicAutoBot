@@ -130,7 +130,6 @@ def show_chart(event=None):
         return
     
     ax = axlist[0]
-
     try:
         detect_and_draw_harmonics(df, ax)
         canvas.draw_idle()
