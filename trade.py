@@ -6,16 +6,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
-from indicators.ema.emaMurtaza import murtaza 
+from indicators.ema.emaMurtaza import murtaza
+import gc
 
-# Binance bağlantısı (Futures)
 exchange = ccxt.binance({
-    'options': {
-        'defaultType': 'future'
-    }
+    'options': {'defaultType': 'future'}
 })
 
-# Arayüz
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
@@ -42,7 +39,6 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
 def detect_and_draw_harmonics(df, ax):
     from matplotlib.lines import Line2D
     window = 50
-
     for i in range(len(df) - 5, window, -1):
         try:
             x = df.iloc[i - 4]
@@ -72,9 +68,7 @@ def detect_and_draw_harmonics(df, ax):
                     ax.text(px, py, label, color='black', fontsize=9, weight='600')
                 ax.text(dX, dY, f"{detected}", color='brown', fontsize=12, weight='bold')
 
-            print(f"Harmonik Pattern: {detected} @ Index {dX}")
-               # break 
-
+                print(f"Harmonik Pattern: {detected} @ Index {dX}")
         except Exception as e:
             print(f"[harmonic_draw] {type(e).__name__}: {e}")
 
@@ -205,6 +199,8 @@ def show_chart(event=None):
     widget.bind("<ButtonRelease-1>", on_release)
     widget.bind("<B1-Motion>", on_motion)
 
+    gc.collect()
+
 def pause_refresh(event):
     should_auto_refresh.set(False)
 
@@ -216,15 +212,15 @@ def auto_refresh_chart():
         show_chart()
     window.after(1000, auto_refresh_chart)
 
-# Kontroller
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
-tk.Label(control_frame, text="Bar Sayısı:").grid(row=0, column=5, padx=5)
+
 limit_var = tk.IntVar(value=100)
+tk.Label(control_frame, text="Bar Sayısı:").grid(row=0, column=5, padx=5)
 limit_spinbox = tk.Spinbox(control_frame, from_=50, to=1000, increment=50, textvariable=limit_var, width=5)
 limit_spinbox.grid(row=0, column=6, padx=5)
 
-tk.Label(control_frame, text="Coin (örn: BTC veya BTC/USDT):").grid(row=0, column=0, padx=5)
+tk.Label(control_frame, text="Coin (\u00f6rn: BTC veya BTC/USDT):").grid(row=0, column=0, padx=5)
 symbol_var = tk.StringVar()
 symbol_entry = tk.Entry(control_frame, textvariable=symbol_var, width=20)
 symbol_entry.grid(row=0, column=1, padx=5)
@@ -243,7 +239,7 @@ timeframe_combo.current(3)
 timeframe_combo.bind("<FocusIn>", pause_refresh)
 timeframe_combo.bind("<FocusOut>", resume_refresh)
 
-tk.Button(control_frame, text="Veriyi Göster", command=show_chart).grid(row=0, column=4, padx=5)
+tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), resume_refresh(None)]).grid(row=0, column=4, padx=5)
 
 settings_frame = tk.Frame(window)
 settings_frame.pack(pady=10)
@@ -261,9 +257,7 @@ trading_exchange = ccxt.binance({
     'apiKey': api_key,
     'secret': api_secret,
     'enableRateLimit': True,
-    'options': {
-        'defaultType': 'future'
-    }
+    'options': {'defaultType': 'future'}
 })
 
 auto_refresh_chart()
