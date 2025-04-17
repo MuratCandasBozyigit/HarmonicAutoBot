@@ -2,7 +2,6 @@
 import pandas as pd
 import mplfinance as mpf
 import tkinter as tk
-import random
 import gc
 import psutil, os
 import sys
@@ -13,7 +12,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
 from mods.percentage import toggle_percent_mode
 from datetime import datetime, timedelta,timezone
-from turtle import clear
 
 exchange = ccxt.binance({
     'apiKey':'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
@@ -132,6 +130,7 @@ def detect_and_draw_recent_harmonics(df, ax):
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
     def clear_canvas():
+        global canvas, fig, ax
         if canvas:
             canvas.get_tk_widget().destroy()
             canvas = None
@@ -338,6 +337,6 @@ emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, b
 emir_btn.grid(row=0, column=7, padx=10)
 
 
-#  monitor_ram()
+#monitor_ram()
 auto_refresh_chart()
 window.mainloop()
