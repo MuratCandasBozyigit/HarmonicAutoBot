@@ -213,7 +213,11 @@ def show_chart(event=None):
     widget.bind("<ButtonPress-1>", on_press)
     widget.bind("<ButtonRelease-1>", on_release)
     widget.bind("<B1-Motion>", on_motion)
-  
+
+def auto_refresh_chart():
+    show_chart()
+    window.after(1000, auto_refresh_chart)  # 1000ms = 1 saniye sonra tekrar çağır
+
 # Kontroller
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
@@ -261,6 +265,5 @@ trading_exchange = ccxt.binance({
     }
 })
 
-
-
+auto_refresh_chart()
 window.mainloop()
