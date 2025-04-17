@@ -5,7 +5,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from harmonic import harmonic_xabcd_validate
+from indicators.harmonic import harmonic_xabcd_validate
 import gc
 
 exchange = ccxt.binance({
