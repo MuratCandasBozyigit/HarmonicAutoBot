@@ -2,6 +2,8 @@ import ccxt
 import pandas as pd
 import mplfinance as mpf
 from datetime import datetime
+import threading
+import time
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -20,6 +22,13 @@ window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
 
+
+last_df = None
+last_symbol = None
+last_timeframe = None
+canvas = None
+ax = None
+widget = None
 draw_ema = tk.BooleanVar(value=True)
 
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
@@ -81,6 +90,7 @@ def detect_and_draw_harmonics(df, ax):
             print(f"[harmonic_draw] {type(e).__name__}: {e}")
 
 def show_chart(event=None):
+    global last_df, last_symbol, last_timeframe, canvas, ax, widget
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     timeframe = timeframe_var.get()
@@ -213,7 +223,10 @@ def show_chart(event=None):
     widget.bind("<ButtonPress-1>", on_press)
     widget.bind("<ButtonRelease-1>", on_release)
     widget.bind("<B1-Motion>", on_motion)
-  
+    last_df = df
+    last_symbol = symbol
+    last_timeframe = timeframe
+
 # Kontroller
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
@@ -261,6 +274,57 @@ trading_exchange = ccxt.binance({
     }
 })
 
+def update_last_candle():
+    global last_df, last_symbol, last_timeframe, canvas, ax, widget
 
+    if last_df is None or ax is None or canvas is None or widget is None:
+        window.after(100, update_last_candle)
+        return
 
+    try:
+        # Canlı fiyatı al
+        ticker = exchange.fetch_ticker(last_symbol)
+        price = ticker['last']
+
+        # Son barın zamanını ve kapanış fiyatını güncelle
+        last_index = last_df.index[-1]
+        now = pd.Timestamp.utcnow()
+
+        # Eğer yeni bar başladıysa => yeni satır ekle
+        tf_seconds = {
+            "1m": 60, "5m": 300, "15m": 900,
+            "1h": 3600, "4h": 14400, "1d": 86400
+        }
+        interval = tf_seconds.get(last_timeframe, 3600)
+        if (now - last_index).total_seconds() >= interval:
+            new_row = pd.DataFrame({
+                "open": [price],
+                "high": [price],
+                "low": [price],
+                "close": [price],
+                "volume": [0]
+            }, index=[last_index + pd.Timedelta(seconds=interval)])
+            last_df = pd.concat([last_df, new_row])
+        else:
+            # Aynı bar içinde: sadece son barı güncelle
+            last_df.iloc[-1]["close"] = price
+            last_df.iloc[-1]["high"] = max(last_df.iloc[-1]["high"], price)
+            last_df.iloc[-1]["low"] = min(last_df.iloc[-1]["low"], price)
+
+        ax.clear()
+        mpf.plot(
+            last_df,
+            type='candle',
+            style='yahoo',
+            ax=ax,
+            volume=False
+        )
+        canvas.draw_idle()
+
+    except Exception as e:
+        print(f"[update_last_candle] {type(e).__name__}: {e}")
+
+    # 100 ms sonra tekrar çalıştır
+    window.after(100, update_last_candle)
+update_last_candle()
 window.mainloop()
