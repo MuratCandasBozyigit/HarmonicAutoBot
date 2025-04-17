@@ -1,7 +1,8 @@
-﻿import ccxt
+﻿from turtle import clear
+import ccxt
 import pandas as pd
 import mplfinance as mpf
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 import tkinter as tk
 import random
 from tkinter import ttk, messagebox
@@ -9,7 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
 from mods.percentage import toggle_percent_mode
 import gc
-#import psutil, os
+import psutil, os
 
 exchange = ccxt.binance({
     'options': {'defaultType': 'future'}
@@ -28,11 +29,19 @@ ax = None
 symbol = None
 timeframe = None
 
+def monitor_ram():
+    os.system('cls' if os.name == 'nt' else 'clear')  # Ekranı temizle
+    process = psutil.Process(os.getpid())
+    used_ram = process.memory_info().rss / 1024**2
+    print(f"[RAM Takip] Anlık RAM kullanımı: {used_ram:.2f} MB")
+    window.after(10000, monitor_ram)  # Her 10 saniyede bir tekrar et
+
+
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
-        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
         df.set_index("timestamp", inplace=True)
         df = df.dropna()
         if df.empty or len(df) < 100:
@@ -81,18 +90,17 @@ def detect_and_draw_recent_harmonics(df, ax):
 
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
-
-
-
-    # Önceki grafik ve canvas temizleniyor
-    if fig:
-        fig.clf()
-        del fig
-        fig = None
-
-    if canvas:
-        canvas.get_tk_widget().destroy()
-        canvas = None
+    def clear_canvas():
+        if canvas:
+            canvas.get_tk_widget().destroy()
+            canvas = None
+        if fig:
+            fig.clf()
+            del fig
+            fig = None
+    
+    def clear_cmd():
+          os.system('cls' if os.name == 'nt' else 'clear')
 
     gc.collect()
 
@@ -149,9 +157,10 @@ def update_last_candle():
         high = max(df.iloc[-1]['high'], last_price)
         low = min(df.iloc[-1]['low'], last_price)
 
-        df.iloc[-1]['close'] = last_price
-        df.iloc[-1]['high'] = high
-        df.iloc[-1]['low'] = low
+        df.loc[df.index[-1], 'close'] = last_price
+        df.loc[df.index[-1], 'high'] = high
+        df.loc[df.index[-1], 'low'] = low
+
 
         ax.clear()
         mpf.plot(
@@ -179,8 +188,9 @@ def auto_refresh_chart():
 
     try:
         # Şu anki zaman ve son mumun zamanı
-        now = datetime.utcnow()
-        last_time = df.index[-1].to_pydatetime()
+        now = datetime.now(timezone.utc)
+        last_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+
 
         # Eğer yeni bir mum oluşmuşsa, tüm veriyi güncelle
         if last_candle_time is None:
@@ -193,9 +203,10 @@ def auto_refresh_chart():
         if (now - last_candle_time).total_seconds() >= tf_seconds:
             print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
             show_chart()
-            last_candle_time = df.index[-1].to_pydatetime()
+            last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
         else:
             update_last_candle()
+
 
     except Exception as e:
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
@@ -235,5 +246,6 @@ tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), r
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
 
+monitor_ram()
 auto_refresh_chart()
 window.mainloop()
