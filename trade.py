@@ -139,17 +139,40 @@ def show_chart(event=None):
 
     def on_scroll(event):
         try:
-            if event.state & 0x0004:
-                x_min, x_max = ax.get_xlim()
-                x_range = x_max - x_min
+            x_min, x_max = ax.get_xlim()
+            y_min, y_max = ax.get_ylim()
+            x_range = x_max - x_min
+            y_range = y_max - y_min
+
+            # Shift: Mumları inceltip uzat (Yatay zoom)
+            if event.state & 0x0001:
+                zoom_factor = 0.05 * x_range
+                if event.delta > 0:
+                    ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
+                else:
+                    ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
+
+            # Alt: Dikey zoom (fiyat ölçeğiyle oyna)
+            elif event.state & 0x0008:
+                zoom_factor = 0.1 * y_range
+                if event.delta > 0:
+                    ax.set_ylim(y_min + zoom_factor, y_max - zoom_factor)
+                else:
+                    ax.set_ylim(y_min - zoom_factor, y_max + zoom_factor)
+
+            # Ctrl: Normal yatay zoom
+            elif event.state & 0x0004:
                 zoom_factor = 0.1 * x_range
                 if event.delta > 0:
                     ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
                 else:
                     ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
-                canvas.draw_idle()
+
+            canvas.draw_idle()
+
         except Exception as e:
             print(f"[on_scroll] {type(e).__name__}: {e}")
+
 
     widget.bind("<MouseWheel>", on_scroll)
 
