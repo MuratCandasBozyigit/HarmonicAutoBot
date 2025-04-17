@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
-from indicators.ema.emaMurtaza import murtaza
+#from indicators.ema.emaMurtaza import murtaza
 import gc
 
 exchange = ccxt.binance({

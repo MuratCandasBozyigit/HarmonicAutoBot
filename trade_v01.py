@@ -1,11 +1,13 @@
 ﻿import ccxt
 import pandas as pd
 import mplfinance as mpf
-from datetime import datetime
+from datetime import datetime, timedelta
 import tkinter as tk
+import random
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
+from mods.percentage import toggle_percent_mode
 import gc
 
 exchange = ccxt.binance({
