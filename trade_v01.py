@@ -9,6 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
 from mods.percentage import toggle_percent_mode
 import gc
+#import psutil, os
 
 exchange = ccxt.binance({
     'options': {'defaultType': 'future'}
@@ -81,6 +82,20 @@ def detect_and_draw_recent_harmonics(df, ax):
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
 
+
+
+    # Önceki grafik ve canvas temizleniyor
+    if fig:
+        fig.clf()
+        del fig
+        fig = None
+
+    if canvas:
+        canvas.get_tk_widget().destroy()
+        canvas = None
+
+    gc.collect()
+
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     timeframe = timeframe_var.get()
@@ -94,9 +109,14 @@ def show_chart(event=None):
         messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
 
+    # Veri temizliği (gerekirse)
+    df = df.dropna()
+    df = df.iloc[-limit_var.get():]
+
     for widget in chart_frame.winfo_children():
         widget.destroy()
 
+    # Yeni grafik oluşturuluyor
     fig, axlist = mpf.plot(
         df,
         type='candle',
@@ -107,11 +127,16 @@ def show_chart(event=None):
         returnfig=True
     )
     ax = axlist[0]
+
+    # Harmonik desenler çiziliyor
     detect_and_draw_recent_harmonics(df, ax)
 
+    # tkinter üzerine grafik yerleştiriliyor
     canvas = FigureCanvasTkAgg(fig, master=chart_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    gc.collect()
 
 def update_last_candle():
     global df, ax, canvas, symbol
