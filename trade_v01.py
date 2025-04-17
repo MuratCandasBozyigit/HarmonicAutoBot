@@ -1,7 +1,8 @@
-﻿import ccxt
+﻿from turtle import clear
+import ccxt
 import pandas as pd
 import mplfinance as mpf
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 import tkinter as tk
 import random
 from tkinter import ttk, messagebox
@@ -9,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
 from mods.percentage import toggle_percent_mode
 import gc
+import psutil, os
 
 exchange = ccxt.binance({
     'options': {'defaultType': 'future'}
@@ -19,7 +21,7 @@ window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
 
 should_auto_refresh = tk.BooleanVar(value=True)
-
+last_candle_time = None 
 df = None
 canvas = None
 fig = None
@@ -27,11 +29,35 @@ ax = None
 symbol = None
 timeframe = None
 
+import sys
+
+def monitor_ram():
+    process = psutil.Process(os.getpid())
+    used_ram = process.memory_info().rss / 1024**2
+
+    # Terminalin en üst satırına RAM yaz
+    sys.stdout.write("\033[1;1H")  # 1. satır, 1. sütuna git
+    sys.stdout.write(f"[RAM Takip] Anlık RAM kullanımı: {used_ram:.2f} MB")
+    sys.stdout.flush()
+
+    # Altına çizgi çiz (2. satıra)
+    sys.stdout.write("\033[2;1H" + "-" * 80)
+    sys.stdout.flush()
+
+    # Pattern loglarını 3. satırdan itibaren bas
+    for i, line in enumerate(logs[-20:]):
+        sys.stdout.write(f"\033[{3+i};1H{line.ljust(80)}")
+    sys.stdout.flush()
+
+    # Her 5 saniyede bir tekrar et
+    window.after(5000, monitor_ram)
+
+
 def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
-        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
         df.set_index("timestamp", inplace=True)
         df = df.dropna()
         if df.empty or len(df) < 100:
@@ -43,9 +69,18 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
         print(f"[get_ohlcv] {type(e).__name__}: {e}")
         return None
 
+logs = []  # Tüm terminal loglarını burada biriktireceğiz (global olarak)
+
+def add_log(msg):
+    logs.append(msg)
+
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
+        # Önceki çizimleri temizle
+        for artist in ax.lines + ax.texts:
+            artist.remove()
+
         for i in range(4, len(df)):
             x = df.iloc[i - 4]
             a = df.iloc[i - 3]
@@ -67,6 +102,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 pattern_type = [gart, bat, bfly, crab, shark, cyph]
                 detected = pattern_name[pattern_type.index(True)]
 
+                # Çizimi yap
                 points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
                 xs, ys = zip(*points)
                 ax.plot(xs, ys, color='darkgreen', linewidth=1.8)
@@ -74,12 +110,28 @@ def detect_and_draw_recent_harmonics(df, ax):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
 
-                print(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
+                # Terminal loguna ekle
+                add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
+
     except Exception as e:
-        print(f"[harmonic_draw] {type(e).__name__}: {e}")
+        add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
+
 
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
+    def clear_canvas():
+        if canvas:
+            canvas.get_tk_widget().destroy()
+            canvas = None
+        if fig:
+            fig.clf()
+            del fig
+            fig = None
+    
+    def clear_cmd():
+          os.system('cls' if os.name == 'nt' else 'clear')
+
+    gc.collect()
 
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
@@ -94,9 +146,14 @@ def show_chart(event=None):
         messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
 
+    # Veri temizliği (gerekirse)
+    df = df.dropna()
+    df = df.iloc[-limit_var.get():]
+
     for widget in chart_frame.winfo_children():
         widget.destroy()
 
+    # Yeni grafik oluşturuluyor
     fig, axlist = mpf.plot(
         df,
         type='candle',
@@ -107,11 +164,16 @@ def show_chart(event=None):
         returnfig=True
     )
     ax = axlist[0]
+
+    # Harmonik desenler çiziliyor
     detect_and_draw_recent_harmonics(df, ax)
 
+    # tkinter üzerine grafik yerleştiriliyor
     canvas = FigureCanvasTkAgg(fig, master=chart_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    gc.collect()
 
 def update_last_candle():
     global df, ax, canvas, symbol
@@ -124,9 +186,10 @@ def update_last_candle():
         high = max(df.iloc[-1]['high'], last_price)
         low = min(df.iloc[-1]['low'], last_price)
 
-        df.iloc[-1]['close'] = last_price
-        df.iloc[-1]['high'] = high
-        df.iloc[-1]['low'] = low
+        df.loc[df.index[-1], 'close'] = last_price
+        df.loc[df.index[-1], 'high'] = high
+        df.loc[df.index[-1], 'low'] = low
+
 
         ax.clear()
         mpf.plot(
@@ -146,9 +209,39 @@ def update_last_candle():
         print(f"[update_last_candle] {type(e).__name__}: {e}")
 
 def auto_refresh_chart():
-    if should_auto_refresh.get():
-        update_last_candle()
+    global last_candle_time
+
+    if not should_auto_refresh.get() or df is None:
+        window.after(1000, auto_refresh_chart)
+        return
+
+    try:
+        # Şu anki zaman ve son mumun zamanı
+        now = datetime.now(timezone.utc)
+        last_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+
+
+        # Eğer yeni bir mum oluşmuşsa, tüm veriyi güncelle
+        if last_candle_time is None:
+            last_candle_time = last_time
+
+        # Timeframe'e göre mum süresi
+        tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
+        tf_seconds = tf_map.get(timeframe, 60)
+
+        if (now - last_candle_time).total_seconds() >= tf_seconds:
+            print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
+            show_chart()
+            last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+        else:
+            update_last_candle()
+
+
+    except Exception as e:
+        print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
+
     window.after(1000, auto_refresh_chart)
+
 
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
@@ -182,5 +275,6 @@ tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), r
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
 
+monitor_ram()
 auto_refresh_chart()
 window.mainloop()
