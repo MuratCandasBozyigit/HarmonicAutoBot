@@ -14,6 +14,8 @@ import psutil, os
 import sys
 
 exchange = ccxt.binance({
+    'api_key':'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
+    'secret_key':'6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag',
     'options': {'defaultType': 'future'}
 })
 
