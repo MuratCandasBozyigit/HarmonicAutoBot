@@ -1,19 +1,23 @@
-﻿from turtle import clear
-import ccxt
+﻿import ccxt
 import pandas as pd
 import mplfinance as mpf
-from datetime import datetime, timedelta,timezone
 import tkinter as tk
 import random
+import gc
+import psutil, os
+import sys
+import time
+import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
 from mods.percentage import toggle_percent_mode
-import gc
-import psutil, os
-import sys
+from datetime import datetime, timedelta,timezone
+from turtle import clear
 
 exchange = ccxt.binance({
+    'apiKey':'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
+    'secret':'6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag',
     'options': {'defaultType': 'future'}
 })
 
@@ -22,6 +26,9 @@ window.title("Harmonic Gözlem Paneli - v0.5")
 window.geometry("1920x1080")
 
 should_auto_refresh = tk.BooleanVar(value=True)
+opened_patterns = set()  
+emir_acik = False
+aktif_emir_id = None
 last_candle_time = None 
 df = None
 canvas = None
@@ -75,7 +82,6 @@ def add_log(msg):
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
-        # Önceki çizimleri temizle
         for artist in ax.lines + ax.texts:
             artist.remove()
 
@@ -100,17 +106,26 @@ def detect_and_draw_recent_harmonics(df, ax):
                 pattern_type = [gart, bat, bfly, crab, shark, cyph]
                 detected = pattern_name[pattern_type.index(True)]
 
-                # Çizimi yap
                 points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
                 xs, ys = zip(*points)
-                ax.plot(xs, ys, color='darkgreen', linewidth=1.8)
+                ax.plot(xs, ys, color='darkgreen', linewidth=1.4)
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
 
-                # Terminal loguna ekle
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
+                if dX == len(df) - 1 and emir_acik:
+                    pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
+                    if emir_acik:
+                        if pattern_id not in opened_patterns:
+                            open_position(dY)
+                            opened_patterns.add(pattern_id)
+                    else:
+                        add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
+                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
+
+        gc.collect()
     except Exception as e:
         add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 
@@ -239,9 +254,51 @@ def auto_refresh_chart():
 
     window.after(1000, auto_refresh_chart)
 
-
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
+
+def open_position(entry_price):
+    global aktif_emir_id
+
+    try:
+        symbol_fut = symbol.replace("/", "").upper()
+        miktar = round(1/ entry_price, 3)
+
+        # Pozisyon aç
+        exchange.set_margin_mode('isolated', symbol=symbol)
+        exchange.set_leverage(5, symbol=symbol)
+        order = exchange.create_order(
+            symbol=symbol,
+            type='market',
+            side='buy',
+            amount=miktar,
+            params={'positionSide': 'LONG', 'leverage': 5, 'marginType': 'isolated'}
+        )
+        aktif_emir_id = order['id']
+        add_log(f"[ORDER] {symbol_fut} - LONG pozisyon açıldı: {miktar} adet @ {entry_price}")
+
+        # TP hedefini hesapla
+        tp_price = round(entry_price * 1.005, 2)
+
+        # Binance'e TP emri gönder
+        exchange.create_order(
+            symbol=symbol,
+            type='TAKE_PROFIT_MARKET',
+            side='sell',
+            amount=miktar,
+            price=tp_price,
+            params={
+                'stopPrice': tp_price,
+                'reduceOnly': True,
+                'positionSide': 'LONG',
+                'workingType': 'MARK_PRICE'
+            }
+        )
+        add_log(f"[TP] {symbol_fut} - Binance'e TP emri gönderildi: {tp_price}")
+        add_log(f"[TP] {symbol_fut} - Binance'e TP emri gönderildi: {tp_price}")
+    except Exception as e:
+        add_log(f"[Pozisyon Açma] {type(e).__name__}: {e}")
+
 
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
@@ -272,6 +329,15 @@ tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), r
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
 
-monitor_ram()
+def toggle_emir():
+    global emir_acik
+    emir_acik = not emir_acik
+    emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
+
+emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
+emir_btn.grid(row=0, column=7, padx=10)
+
+
+#  monitor_ram()
 auto_refresh_chart()
 window.mainloop()
