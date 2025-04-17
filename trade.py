@@ -22,7 +22,7 @@ window.geometry("1920x1080")
 
 draw_ema = tk.BooleanVar(value=True)
 
-def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=500):
+def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
@@ -40,7 +40,7 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=500):
 
 def detect_and_draw_harmonics(df, ax):
     from matplotlib.lines import Line2D
-    window = 150  # kaç bar geri dönüp pattern bakacağız
+    window = 50  # kaç bar geri dönüp pattern bakacağız
 
     for i in range(len(df) - 5, window, -1):  # geriye doğru tarar
         try:
@@ -193,7 +193,7 @@ def show_chart(event=None):
     widget.bind("<ButtonPress-1>", on_press)
     widget.bind("<ButtonRelease-1>", on_release)
     widget.bind("<B1-Motion>", on_motion)
-
+  
 # Kontroller
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
@@ -240,66 +240,3 @@ trading_exchange = ccxt.binance({
 
 
 window.mainloop()
-# def execute_trade():
-#     raw_symbol = symbol_var.get().strip().upper()
-#     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
-#     timeframe = timeframe_var.get()
-
-#     df = get_ohlcv(symbol, timeframe)
-#     if df is None or df.empty:
-#         messagebox.showwarning("Uyarı", "İşlem için geçerli veri alınamadı!")
-#         return
-
-#     try:
-#         # EMA stratejisini uygula
-#         murtaza(df)
-
-#         # Sinyal sütunları gerçekten eklendi mi kontrol et
-#         if "long_signal" not in df.columns or "short_signal" not in df.columns:
-#             raise ValueError("Sinyal sütunları df içerisinde bulunamadı. murtaza() fonksiyonu bunları eklemiyor olabilir.")
-
-#         last_row = df.iloc[-1]
-
-#         # Pozisyon parametreleri
-#         usdt_amount = 1     # USDT cinsinden işlem büyüklüğü
-#         leverage = 20       # 20x kaldıraç
-
-#         trading_exchange.set_leverage(leverage, symbol=symbol)
-
-#         # Güncel fiyat ve miktar hesapla
-#         market_price = last_row['close']
-#         coin_amount = round((usdt_amount * leverage) / market_price, 3)
-
-#         if last_row.get("long_signal"):
-#             side = 'buy'
-#             msg = f"[LONG] Sinyal algılandı - {symbol}"
-#         elif last_row.get("short_signal"):
-#             side = 'sell'
-#             msg = f"[SHORT] Sinyal algılandı - {symbol}"
-#         else:
-#             messagebox.showinfo("Bilgi", "Sinyal tespit edilmedi.")
-#             return
-
-#         # Market emri gönder
-#         order = trading_exchange.create_market_order(
-#             symbol=symbol,
-#             side=side,
-#             amount=coin_amount
-#         )
-
-#         messagebox.showinfo("Başarılı", f"{msg}\nMarket Order Açıldı\nID: {order['id']}")
-#         print("[Order Detayları]", order)
-
-#     except ccxt.BaseError as e:
-#         print(f"[ccxt error] {type(e).__name__}: {e}")
-#         messagebox.showerror("Exchange Hatası", f"ccxt hatası:\n{type(e).__name__}: {e}")
-
-#     except Exception as e:
-#         import traceback
-#         tb = traceback.format_exc()
-#         print(f"[execute_trade] {type(e).__name__}: {e}")
-#         print(tb)
-#         messagebox.showerror("Hata", f"İşlem sırasında beklenmeyen bir hata oluştu:\n{type(e).__name__}: {e}")
-
-
-# tk.Button(control_frame, text="Otomatik İşlem Aç", command=execute_trade, bg="green", fg="white").grid(row=0, column=6, padx=5)
