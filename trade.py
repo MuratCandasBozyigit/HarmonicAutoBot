@@ -89,7 +89,7 @@ def show_chart(event=None):
         messagebox.showwarning("Uyarı", "Lütfen coin ve zaman dilimi seçiniz.")
         return
 
-    df = get_ohlcv(symbol, timeframe)
+    df = get_ohlcv(symbol, timeframe, limit=limit_var.get())
     if df is None or df.empty:
         messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
@@ -196,6 +196,10 @@ def show_chart(event=None):
 # Kontroller
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
+tk.Label(control_frame, text="Bar Sayısı:").grid(row=0, column=5, padx=5)
+limit_var = tk.IntVar(value=100)
+limit_spinbox = tk.Spinbox(control_frame, from_=50, to=1000, increment=50, textvariable=limit_var, width=5)
+limit_spinbox.grid(row=0, column=6, padx=5)
 
 tk.Label(control_frame, text="Coin (örn: BTC veya BTC/USDT):").grid(row=0, column=0, padx=5)
 symbol_var = tk.StringVar()
