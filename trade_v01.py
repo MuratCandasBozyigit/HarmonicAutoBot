@@ -116,7 +116,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if emir_acik:
                         if pattern_id not in opened_patterns:
-                            open_position(dY)
+                            open_position(dY, symbol)
                             opened_patterns.add(pattern_id)
                         add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
                     else:
@@ -252,13 +252,13 @@ def auto_refresh_chart():
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
 
-def open_position(entry_price):
+def open_position(entry_price, symbol):
     global aktif_emir_id
 
     try:
         usdt_miktarı:1
         symbol_fut = symbol.replace("/", "").upper()
-        miktar = round(usdt_miktarı/ entry_price, 3)
+        miktar = round(1/ entry_price, 3)
 
         # Pozisyon aç
         exchange.set_margin_mode('isolated', symbol=symbol)
