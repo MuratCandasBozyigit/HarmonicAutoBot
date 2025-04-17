@@ -115,7 +115,7 @@ def detect_and_draw_recent_harmonics(df, ax):
 
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
-                if dX == len(df) - 2:
+                if dX == len(df) - 1 and emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if emir_acik:
                         if pattern_id not in opened_patterns:
@@ -262,17 +262,17 @@ def open_position(entry_price):
 
     try:
         symbol_fut = symbol.replace("/", "").upper()
-        miktar = round(0.5 / entry_price, 3)
+        miktar = round(1/ entry_price, 3)
 
         # Pozisyon aç
         exchange.set_margin_mode('isolated', symbol=symbol)
-        exchange.set_leverage(15, symbol=symbol)
+        exchange.set_leverage(5, symbol=symbol)
         order = exchange.create_order(
             symbol=symbol,
             type='market',
             side='buy',
             amount=miktar,
-            params={'positionSide': 'LONG', 'leverage': 15, 'marginType': 'isolated'}
+            params={'positionSide': 'LONG', 'leverage': 5, 'marginType': 'isolated'}
         )
         aktif_emir_id = order['id']
         add_log(f"[ORDER] {symbol_fut} - LONG pozisyon açıldı: {miktar} adet @ {entry_price}")
@@ -295,7 +295,7 @@ def open_position(entry_price):
             }
         )
         add_log(f"[TP] {symbol_fut} - Binance'e TP emri gönderildi: {tp_price}")
-        prinf(f"[TP] {symbol_fut} - Binance'e TP emri gönderildi: {tp_price}")
+        add_log(f"[TP] {symbol_fut} - Binance'e TP emri gönderildi: {tp_price}")
     except Exception as e:
         add_log(f"[Pozisyon Açma] {type(e).__name__}: {e}")
 
@@ -338,6 +338,6 @@ emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, b
 emir_btn.grid(row=0, column=7, padx=10)
 
 
-monitor_ram()
+#  monitor_ram()
 auto_refresh_chart()
 window.mainloop()
