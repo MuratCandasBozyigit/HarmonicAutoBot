@@ -23,7 +23,7 @@ exchange = ccxt.binance({
 
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.5")
-window.geometry("1920x1080")
+window.geometry("1280x560")
 
 should_auto_refresh = tk.BooleanVar(value=True)
 opened_patterns = set()  
