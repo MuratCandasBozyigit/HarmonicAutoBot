@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from indicators.harmonic import harmonic_xabcd_validate
-#from indicators.ema.emaMurtaza import murtaza
+from mods import percentage
 import gc
 
 exchange = ccxt.binance({
@@ -16,7 +16,7 @@ exchange = ccxt.binance({
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.4")
 window.geometry("1920x1080")
-
+percentage.init_percent_mode(window)
 draw_ema = tk.BooleanVar(value=True)
 should_auto_refresh = tk.BooleanVar(value=True)
 
@@ -120,8 +120,11 @@ def show_chart(event=None):
     except Exception as e:
         print(f"[FigureCanvasTkAgg] {type(e).__name__}: {e}")
         return
-
+    detect_and_draw_harmonics(df, ax)
+    canvas.draw_idle()
     ax = axlist[0]
+    percentage.activate(canvas, ax)
+
     try:
         detect_and_draw_harmonics(df, ax)
         canvas.draw_idle()
@@ -249,6 +252,9 @@ ema_checkbutton.pack()
 
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
+percent_button = tk.Button(settings_frame, text="Yüzde Ölçüm Modu", command=percentage.toggle_percent_mode)
+percent_button.pack(pady=5)
+
 
 api_key = 'AB9ABNvPdaqb1Se7YNBkNU254LYZVCNEpvLHVfvkEsl2N9ySmiDxDfn7KfV0sPtn'
 api_secret = 'GCWzeHX1UqFdIfct9pZUkdMIhHXyz1yL2Wo5oCOsWP0ZrmRJJzxMqHLRWghYizka'
@@ -260,5 +266,5 @@ trading_exchange = ccxt.binance({
     'options': {'defaultType': 'future'}
 })
 
-auto_refresh_chart()
+
 window.mainloop()

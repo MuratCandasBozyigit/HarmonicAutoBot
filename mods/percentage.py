@@ -1,15 +1,18 @@
-﻿# percent_tool.py
-
-import tkinter as tk
+﻿import tkinter as tk
 
 start_price = None
 end_price = None
 percent_text = None
-percent_mode = tk.BooleanVar(value=False)
+percent_mode = None  # Bu GUI'den sonra set edilecek
+
+def init_percent_mode(root):
+    global percent_mode
+    percent_mode = tk.BooleanVar(master=root, value=False)
 
 def toggle_percent_mode():
-    percent_mode.set(not percent_mode.get())
-    print("Yüzde ölçüm modu:", "AÇIK" if percent_mode.get() else "KAPALI")
+    if percent_mode:
+        percent_mode.set(not percent_mode.get())
+        print("Yüzde ölçüm modu:", "AÇIK" if percent_mode.get() else "KAPALI")
 
 def activate(canvas, ax):
     canvas.mpl_connect("button_press_event", lambda event: on_click_percent_measure(event, ax, canvas))
@@ -17,7 +20,7 @@ def activate(canvas, ax):
 def on_click_percent_measure(event, ax, canvas):
     global start_price, end_price, percent_text
 
-    if not percent_mode.get() or event.inaxes != ax:
+    if not percent_mode or not percent_mode.get() or event.inaxes != ax:
         return
 
     y_clicked = event.ydata
