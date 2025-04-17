@@ -57,7 +57,7 @@ def monitor_ram():
     # Her 5 saniyede bir tekrar et
     window.after(5000, monitor_ram)
 
-def get_ohlcv(symbol="BTC/USDT", timeframe="1h", limit=300):
+def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
