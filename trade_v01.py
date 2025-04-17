@@ -28,6 +28,8 @@ window.title("Harmonic Gözlem Paneli - v0.5")
 window.geometry("1920x1080")
 
 #pygame.mixer.init()
+emir_acik = False
+aktif_emir_id = None
 should_auto_refresh = tk.BooleanVar(value=True)
 last_candle_time = None 
 df = None
@@ -285,6 +287,15 @@ tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), r
 
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
+
+def toggle_emir():
+    global emir_acik
+    emir_acik = not emir_acik
+    emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
+
+emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
+emir_btn.grid(row=0, column=7, padx=10)
+
 
 monitor_ram()
 auto_refresh_chart()
