@@ -76,7 +76,7 @@ logs = []
 def add_log(msg):
     logs.append(msg)
 
-def detect_and_draw_recent_harmonics(df, ax):
+def detect_and_draw_recent_harmonics(df, ax, symbol):
     from matplotlib.lines import Line2D
     try:
         # Önceki çizimleri temizle
@@ -104,47 +104,48 @@ def detect_and_draw_recent_harmonics(df, ax):
                 pattern_type = [gart, bat, bfly, crab, shark, cyph]
                 detected = pattern_name[pattern_type.index(True)]
                 unique_key = f"{symbol}_{df.index[dX]}"
-            if unique_key not in open_trades:
-                open_trades[unique_key] = {}  # Rezerve et
 
-                direction = "buy" if dY < cY else "sell"
-                amount = 0.5
-                leverage = 15
+                if unique_key not in open_trades:
+                    open_trades[unique_key] = {}  # Rezerve et
 
-                place_market_order(symbol, direction, amount, leverage)
+                    direction = "buy" if dY < cY else "sell"
+                    amount = 0.5
+                    leverage = 15
 
-                # Giriş fiyatı alınır
-                ticker = exchange.fetch_ticker(symbol)
-                entry_price = ticker['last']
+                    place_market_order(symbol, direction, amount, leverage)
 
-                # TP hesapla (%0.5)
-                tp_price = entry_price * 1.005 if direction == "buy" else entry_price * 0.995
+                    # Giriş fiyatı alınır
+                    ticker = exchange.fetch_ticker(symbol)
+                    entry_price = ticker['last']
 
-                # Trade’i kaydet
-                open_trades[unique_key] = {
-                    "side": direction,
-                    "entry": entry_price,
-                    "tp": tp_price,
-                    "amount": amount,
-                    "symbol": symbol
-                }
+                    # TP hesapla (%0.5)
+                    tp_price = entry_price * 1.005 if direction == "buy" else entry_price * 0.995
 
-                add_log(f"[TP Takip] {symbol} {direction} açıldı @ {entry_price:.2f}, TP: {tp_price:.2f}")
+                    # Trade’i kaydet
+                    open_trades[unique_key] = {
+                        "side": direction,
+                        "entry": entry_price,
+                        "tp": tp_price,
+                        "amount": amount,
+                        "symbol": symbol
+                    }
 
+                    add_log(f"[TP Takip] {symbol} {direction} açıldı @ {entry_price:.2f}, TP: {tp_price:.2f}")
 
-                # Çizimi yap
-                points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
-                xs, ys = zip(*points)
-                ax.plot(xs, ys, color='darkgreen', linewidth=1.8)
-                for label, (px, py) in zip("XABCD", points):
-                    ax.text(px, py, label, color='black', fontsize=8, weight='bold')
-                ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
+                    # Çizimi yap
+                    points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
+                    xs, ys = zip(*points)
+                    ax.plot(xs, ys, color='darkgreen', linewidth=1.8)
+                    for label, (px, py) in zip("XABCD", points):
+                        ax.text(px, py, label, color='black', fontsize=8, weight='bold')
+                    ax.text(dX, dY, f"{detected}", color='maroon', fontsize=10, weight='bold')
 
-                # Terminal loguna ekle
-                add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
+                    # Terminal loguna ekle
+                    add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
     except Exception as e:
         add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
+
 
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
@@ -195,7 +196,7 @@ def show_chart(event=None):
     ax = axlist[0]
 
     # Harmonik desenler çiziliyor
-    detect_and_draw_recent_harmonics(df, ax)
+    detect_and_draw_recent_harmonics(df, ax,symbol)
 
     # tkinter üzerine grafik yerleştiriliyor
     canvas = FigureCanvasTkAgg(fig, master=chart_frame)
