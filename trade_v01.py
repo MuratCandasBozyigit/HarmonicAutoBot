@@ -252,6 +252,43 @@ def auto_refresh_chart():
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
 
+def execute_trade():
+    raw_symbol = symbol_var.get().strip().upper()
+    symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
+    timeframe = timeframe_var.get()
+
+    df = get_ohlcv(symbol, timeframe)
+    if df is None or df.empty:
+        messagebox.showwarning("Uyarı", "İşlem için geçerli veri alınamadı!")
+        return
+
+    try:
+        # Pozisyon parametreleri
+        usdt_amount = 0.6  # Pozisyon büyüklüğü USDT olarak
+        leverage = 10      # Kaldıraç
+
+        exchange.set_leverage(leverage, symbol=symbol)
+
+        # Son fiyat
+        market_price = df['close'].iloc[-1]
+        coin_amount = round((usdt_amount * leverage) / market_price, 3)
+
+        # Long yönlü market emri gönder
+        order = exchange.create_market_order(
+            symbol=symbol,
+            side='buy',
+            amount=coin_amount
+        )
+
+        msg = f"[LONG] Anlık işlem açıldı - {symbol}"
+        messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
+        print(order)
+
+    except Exception as e:
+        print(f"[execute_trade] {type(e).__name__}: {e}")
+        messagebox.showerror("Hata", f"İşlem sırasında hata oluştu:\n{e}")
+
+
 def open_position(entry_price, symbol):
     global aktif_emir_id
 
@@ -321,6 +358,7 @@ timeframe_combo.grid(row=0, column=3, padx=5)
 timeframe_combo.current(3)
 
 tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), resume_refresh(None)]).grid(row=0, column=4, padx=5)
+tk.Button(control_frame, text="Anlık Long Aç", command=execute_trade).grid(row=0, column=5, padx=5)
 
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
