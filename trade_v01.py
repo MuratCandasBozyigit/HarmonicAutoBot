@@ -39,7 +39,6 @@ ax = None
 symbol = None
 timeframe = None
 
-
 def monitor_ram():
     process = psutil.Process(os.getpid())
     used_ram = process.memory_info().rss / 1024**2
@@ -126,7 +125,6 @@ def detect_and_draw_recent_harmonics(df, ax):
         gc.collect()
     except Exception as e:
         add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
-
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
     def clear_canvas():
@@ -252,7 +250,6 @@ def auto_refresh_chart():
     window.after(1000, auto_refresh_chart)
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
-
 def execute_trade():
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
@@ -321,7 +318,6 @@ def execute_trade():
     except Exception as e:
         print(f"[execute_trade] {type(e).__name__}: {e}")
         print("Hata", f"İşlem sırasında hata oluştu:\n{e}")
-
 def open_position(entry_price, symbol):
     global aktif_emir_id
     raw_symbol = symbol_var.get().strip().upper()
