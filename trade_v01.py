@@ -13,7 +13,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from helpers.binance_isolated import set_isolated_mode
 from indicators.harmonic import harmonic_xabcd_validate
 from datetime import datetime, timedelta,timezone
-
+from helpers.globals import *
 
 exchange = ccxt.binance({
     'apiKey':'991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3',
