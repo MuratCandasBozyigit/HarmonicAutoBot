@@ -258,6 +258,8 @@ def execute_trade():
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = timeframe_var.get()
+
+    # DOĞRU KEY ile izole modu ayarla
     set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
     df = get_ohlcv(symbol, timeframe)
@@ -266,30 +268,26 @@ def execute_trade():
         return
 
     try:
-        usdt_amount = 15  # Pozisyon büyüklüğü USDT
-        leverage = 10     # Kaldıraç
+        usdt_amount = 15
+        leverage = 10
 
-        exchange.set_leverage(leverage, symbol=symbol)
+        exchange.set_leverage(leverage, symbol=binance_symbol)
 
         market_price = df['close'].iloc[-1]
         coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
-        # Long pozisyon aç
         order = exchange.create_market_order(
-            symbol=symbol,
+            symbol=binance_symbol,
             side='buy',
             amount=coin_amount
         )
 
-       
-
         entry_price = float(order['average']) if 'average' in order else market_price
-        take_profit_price = round(entry_price * 1.005, 2)  # +0.5%
-        stop_loss_price = round(entry_price * 0.99, 2)     # -1%
+        take_profit_price = round(entry_price * 1.005, 2)
+        stop_loss_price = round(entry_price * 0.99, 2)
 
-        # TP emri
         exchange.create_order(
-            symbol=symbol,
+            symbol=binance_symbol,
             type='take_profit_market',
             side='sell',
             amount=coin_amount,
@@ -300,9 +298,8 @@ def execute_trade():
             }
         )
 
-        # SL emri
         exchange.create_order(
-            symbol=symbol,
+            symbol=binance_symbol,
             type='stop_market',
             side='sell',
             amount=coin_amount,
@@ -312,7 +309,6 @@ def execute_trade():
                 'workingType': 'MARK_PRICE'
             }
         )
-
 
         msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
         messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
