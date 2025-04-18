@@ -56,7 +56,6 @@ def monitor_ram():
 
     # Her 5 saniyede bir tekrar et
     window.after(5000, monitor_ram)
-
 def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
@@ -72,7 +71,6 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
         messagebox.showerror("Hata", f"Veri çekilirken hata oluştu:\n{str(e)}")
         print(f"[get_ohlcv] {type(e).__name__}: {e}")
         return None
-
 logs = []  
 def add_log(msg):
     logs.append(msg)
@@ -112,7 +110,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
-                if dX == len(df) - 1 and emir_acik:
+                if dX == len(df) - 2 and emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if emir_acik:
                         if pattern_id not in opened_patterns:
@@ -293,42 +291,25 @@ def open_position(entry_price, symbol):
     global aktif_emir_id
 
     try:
-        usdt_miktarı:1
-        symbol_fut = symbol.replace("/", "").upper()
-        miktar = round(1/ entry_price, 3)
+        usdt_amount = 0.6  # Pozisyon büyüklüğü USDT olarak
+        leverage = 10      # Kaldıraç
 
-        # Pozisyon aç
-        exchange.set_margin_mode('isolated', symbol=symbol)
-        exchange.set_leverage(5, symbol=symbol)
-        order = exchange.create_order(
-            symbol=symbol,
-            type='market',
-            side='buy',
-            amount=miktar,
-            params={'positionSide': 'LONG', 'leverage': 5, 'marginType': 'isolated'}
-        )
-        aktif_emir_id = order['id']
-        add_log(f"[ORDER] {symbol_fut} - LONG pozisyon açıldı: {miktar} adet @ {entry_price}")
+        exchange.set_leverage(leverage, symbol=symbol)
 
-        # TP hedefini hesapla
-        tp_price = round(entry_price * 1.005, 2)
+            # Son fiyat
+        market_price = df['close'].iloc[-1]
+        coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
-        # Binance'e TP emri gönder
-        exchange.create_order(
-            symbol=symbol,
-            type='TAKE_PROFIT_MARKET',
-            side='sell',
-            amount=miktar,
-            price=tp_price,
-            params={
-                'stopPrice': tp_price,
-                'reduceOnly': True,
-                'positionSide': 'LONG',
-                'workingType': 'MARK_PRICE'
-            }
-        )
-        add_log(f"[TP] {symbol_fut} - Binance'e TP emri gönderildi: {tp_price}")
-        add_log(f"[TP] {symbol_fut} - Binance'e TP emri gönderildi: {tp_price}")
+            # Long yönlü market emri gönder
+        order = exchange.create_market_order(
+                symbol=symbol,
+                side='buy',
+                amount=coin_amount
+            )
+
+        msg = f"[LONG] Anlık işlem açıldı - {symbol}"
+        messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
+        print(order)
     except Exception as e:
         add_log(f"[Pozisyon Açma] {type(e).__name__}: {e}")
 
