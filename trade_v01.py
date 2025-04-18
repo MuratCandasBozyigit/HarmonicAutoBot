@@ -279,15 +279,17 @@ def execute_trade():
             amount=coin_amount
         )
 
+       
+
         entry_price = float(order['average']) if 'average' in order else market_price
-        take_profit_price = round(entry_price * 1.005, 2)
-        stop_loss_price = round(entry_price * 0.99, 2)
+        take_profit_price = round(entry_price * 1.005, 2)  # +0.5%
+        stop_loss_price = round(entry_price * 0.99, 2)     # -1%
 
         # TP emri
         exchange.create_order(
             symbol=symbol,
-            side='sell',
             type='take_profit_market',
+            side='sell',
             amount=coin_amount,
             params={
                 'stopPrice': take_profit_price,
@@ -299,8 +301,8 @@ def execute_trade():
         # SL emri
         exchange.create_order(
             symbol=symbol,
-            side='sell',
             type='stop_market',
+            side='sell',
             amount=coin_amount,
             params={
                 'stopPrice': stop_loss_price,
@@ -308,6 +310,7 @@ def execute_trade():
                 'workingType': 'MARK_PRICE'
             }
         )
+
 
         msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
         messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
@@ -346,14 +349,14 @@ def open_position(entry_price, symbol):
         )
 
         entry_price = float(order['average']) if 'average' in order else market_price
-        take_profit_price = round(entry_price * 1.05, 2)
-        stop_loss_price = round(entry_price * 0.90, 2)
+        take_profit_price = round(entry_price * 1.005, 2)  # +0.5%
+        stop_loss_price = round(entry_price * 0.99, 2)     # -1%
 
-        # TP - Take Profit
+        # TP emri
         exchange.create_order(
             symbol=symbol,
-            side='sell',
             type='take_profit_market',
+            side='sell',
             amount=coin_amount,
             params={
                 'stopPrice': take_profit_price,
@@ -362,11 +365,11 @@ def open_position(entry_price, symbol):
             }
         )
 
-        # SL - Stop Loss
+        # SL emri
         exchange.create_order(
             symbol=symbol,
-            side='sell',
             type='stop_market',
+            side='sell',
             amount=coin_amount,
             params={
                 'stopPrice': stop_loss_price,
@@ -374,7 +377,6 @@ def open_position(entry_price, symbol):
                 'workingType': 'MARK_PRICE'
             }
         )
-
         msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
         messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
         print(order)
