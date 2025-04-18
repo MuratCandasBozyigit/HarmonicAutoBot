@@ -262,7 +262,7 @@ def execute_trade():
 
     df = get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
-        messagebox.showwarning("Uyarı", "İşlem için geçerli veri alınamadı!")
+        Add.log("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
 
     try:
@@ -315,12 +315,12 @@ def execute_trade():
 
 
         msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
-        messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
+        Add.log("Başarılı", f"{msg}\nOrder ID: {order['id']}")
         print(order)
 
     except Exception as e:
         print(f"[execute_trade] {type(e).__name__}: {e}")
-        messagebox.showerror("Hata", f"İşlem sırasında hata oluştu:\n{e}")
+        Add.log("Hata", f"İşlem sırasında hata oluştu:\n{e}")
 
 def open_position(entry_price, symbol):
     global aktif_emir_id

@@ -6,7 +6,7 @@ import hmac
 import hashlib
 
 def set_isolated_mode(api_key, api_secret, symbol):
-    base_url = "https://fapi.binance.com"
+    base_url = "https://testnet.binancefuture.com"
     endpoint = "/fapi/v1/marginType"
     timestamp = int(time.time() * 1000)
 
