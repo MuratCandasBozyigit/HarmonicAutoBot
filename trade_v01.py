@@ -11,7 +11,6 @@ from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from helpers.binance_isolated import set_isolated_mode
 from indicators.harmonic import harmonic_xabcd_validate
-#from folders.ema.emaMurtaza import EMA
 from datetime import datetime, timedelta,timezone
 
 exchange = ccxt.binance({
