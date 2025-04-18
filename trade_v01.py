@@ -1,4 +1,5 @@
-﻿import ccxt
+﻿from ast import Add
+import ccxt
 import pandas as pd
 import mplfinance as mpf
 import tkinter as tk
@@ -12,6 +13,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from helpers.binance_isolated import set_isolated_mode
 from indicators.harmonic import harmonic_xabcd_validate
 from datetime import datetime, timedelta,timezone
+
 
 exchange = ccxt.binance({
     'apiKey':'991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3',
@@ -330,7 +332,7 @@ def open_position(entry_price, symbol):
 
     df = get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
-        messagebox.showwarning("Uyarı", "İşlem için geçerli veri alınamadı!")
+        Add.log("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
 
     try:
@@ -377,13 +379,12 @@ def open_position(entry_price, symbol):
                 'workingType': 'MARK_PRICE'
             }
         )
-        msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
-        messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
+     
         print(order)
 
     except Exception as e:
         print(f"[open_position] {type(e).__name__}: {e}")
-        messagebox.showerror("Hata", f"İşlem sırasında hata oluştu:\n{e}")
+    
 
 
 

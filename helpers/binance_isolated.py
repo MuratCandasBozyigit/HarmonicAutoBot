@@ -14,7 +14,7 @@ def set_isolated_mode(api_key, api_secret, symbol):
     signature = hmac.new(api_secret.encode(), params.encode(), hashlib.sha256).hexdigest()
 
     headers = {
-        "X-MBX-APIKEY": 'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42'
+        "X-MBX-APIKEY": '991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3'
     }
 
     url = f"{base_url}{endpoint}?{params}&signature={signature}"
