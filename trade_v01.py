@@ -14,6 +14,8 @@ from helpers.binance_isolated import set_isolated_mode
 from indicators.harmonic import harmonic_xabcd_validate
 from datetime import datetime, timedelta,timezone
 from helpers.globals import *
+from chartUtils.drawHarmonic import draw_harmonic_pattern
+
 
 exchange = ccxt.binance({
     'apiKey':'991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3',
@@ -78,53 +80,9 @@ logs = []
 def add_log(msg):
     logs.append(msg)
 def detect_and_draw_recent_harmonics(df, ax):
-    from matplotlib.lines import Line2D
-    try:
-        for artist in ax.lines + ax.texts:
-            artist.remove()
+     draw_harmonic_pattern(ax, df)
 
-        for i in range(4, len(df)):
-            x = df.iloc[i - 4]
-            a = df.iloc[i - 3]
-            b = df.iloc[i - 2]
-            c = df.iloc[i - 1]
-            d = df.iloc[i]
 
-            xX, xY = i - 4, x['low']
-            aX, aY = i - 3, a['high']
-            bX, bY = i - 2, b['low']
-            cX, cY = i - 1, c['high']
-            dX, dY = i, d['low']
-
-            result = harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
-            is_valid, gart, bat, bfly, crab, shark, cyph = result
-
-            if is_valid:
-                pattern_name = ["Gartley", "Bat", "Butterfly", "Crab", "Shark", "Cypher"]
-                pattern_type = [gart, bat, bfly, crab, shark, cyph]
-                detected = pattern_name[pattern_type.index(True)]
-
-                points = [(xX, xY), (aX, aY), (bX, bY), (cX, cY), (dX, dY)]
-                xs, ys = zip(*points)
-                ax.plot(xs, ys, color='darkgreen', linewidth=1.4)
-                for label, (px, py) in zip("XABCD", points):
-                    ax.text(px, py, label, color='black', fontsize=8, weight='bold')
-                #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
-                add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
-
-                if dX == len(df) - 7 and emir_acik:
-                    pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
-                    if emir_acik:
-                        if pattern_id not in opened_patterns:
-                            open_position(dY, symbol)
-                            opened_patterns.add(pattern_id)
-                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
-                    else:
-                        add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
-
-        gc.collect()
-    except Exception as e:
-        add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 def show_chart(event=None):
     global df, fig, ax, canvas, symbol, timeframe
     def clear_canvas():
