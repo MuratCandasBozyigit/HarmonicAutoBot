@@ -14,10 +14,12 @@ from indicators.harmonic import harmonic_xabcd_validate
 from datetime import datetime, timedelta,timezone
 
 exchange = ccxt.binance({
-    'apiKey':'irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42',
-    'secret':'6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag',
+    'apiKey':'991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3',
+    'secret':'4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb',
+    'enableRateLimit': True,
     'options': {'defaultType': 'future'}
 })
+exchange.set_sandbox_mode(True) 
 
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.5")
@@ -110,7 +112,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
-                if dX == len(df) - 2 and emir_acik:
+                if dX == len(df) - 7 and emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if emir_acik:
                         if pattern_id not in opened_patterns:
@@ -263,7 +265,7 @@ def execute_trade():
 
     try:
         # Pozisyon parametreleri
-        usdt_amount = 0.6  # Pozisyon büyüklüğü USDT olarak
+        usdt_amount =15 # Pozisyon büyüklüğü USDT olarak
         leverage = 10      # Kaldıraç
 
         exchange.set_leverage(leverage, symbol=symbol)
@@ -302,7 +304,7 @@ def open_position(entry_price, symbol):
 
     try:
         # Pozisyon parametreleri
-        usdt_amount = 0.6  # Pozisyon büyüklüğü USDT olarak
+        usdt_amount = 15  # Pozisyon büyüklüğü USDT olarak
         leverage = 10      # Kaldıraç
 
         exchange.set_leverage(leverage, symbol=symbol)
