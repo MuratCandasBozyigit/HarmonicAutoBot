@@ -76,7 +76,6 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
 logs = []  
 def add_log(msg):
     logs.append(msg)
-
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
@@ -257,31 +256,60 @@ def execute_trade():
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = timeframe_var.get()
-    set_isolated_mode('irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42', '6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag', binance_symbol)
+    set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
+
     df = get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
         messagebox.showwarning("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
 
     try:
-        # Pozisyon parametreleri
-        usdt_amount =15 # Pozisyon büyüklüğü USDT olarak
-        leverage = 10      # Kaldıraç
+        usdt_amount = 15  # Pozisyon büyüklüğü USDT
+        leverage = 10     # Kaldıraç
 
         exchange.set_leverage(leverage, symbol=symbol)
 
-        # Son fiyat
         market_price = df['close'].iloc[-1]
         coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
-        # Long yönlü market emri gönder
+        # Long pozisyon aç
         order = exchange.create_market_order(
             symbol=symbol,
             side='buy',
             amount=coin_amount
         )
 
-        msg = f"[LONG] Anlık işlem açıldı - {symbol}"
+        entry_price = float(order['average']) if 'average' in order else market_price
+        take_profit_price = round(entry_price * 1.005, 2)
+        stop_loss_price = round(entry_price * 0.99, 2)
+
+        # TP emri
+        exchange.create_order(
+            symbol=symbol,
+            side='sell',
+            type='take_profit_market',
+            amount=coin_amount,
+            params={
+                'stopPrice': take_profit_price,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
+        )
+
+        # SL emri
+        exchange.create_order(
+            symbol=symbol,
+            side='sell',
+            type='stop_market',
+            amount=coin_amount,
+            params={
+                'stopPrice': stop_loss_price,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
+        )
+
+        msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
         messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
         print(order)
 
@@ -291,42 +319,70 @@ def execute_trade():
 
 def open_position(entry_price, symbol):
     global aktif_emir_id
-
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = timeframe_var.get()
-    set_isolated_mode('irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42', '6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag', binance_symbol)
+    set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
+
     df = get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
         messagebox.showwarning("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
 
     try:
-        # Pozisyon parametreleri
-        usdt_amount = 15  # Pozisyon büyüklüğü USDT olarak
-        leverage = 10      # Kaldıraç
+        usdt_amount = 15
+        leverage = 10
 
         exchange.set_leverage(leverage, symbol=symbol)
-
-        # Son fiyat
         market_price = df['close'].iloc[-1]
         coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
-        # Long yönlü market emri gönder
+        # Long pozisyon aç
         order = exchange.create_market_order(
             symbol=symbol,
             side='buy',
             amount=coin_amount
         )
 
-        msg = f"[LONG] Anlık işlem açıldı - {symbol}"
+        entry_price = float(order['average']) if 'average' in order else market_price
+        take_profit_price = round(entry_price * 1.05, 2)
+        stop_loss_price = round(entry_price * 0.90, 2)
+
+        # TP - Take Profit
+        exchange.create_order(
+            symbol=symbol,
+            side='sell',
+            type='take_profit_market',
+            amount=coin_amount,
+            params={
+                'stopPrice': take_profit_price,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
+        )
+
+        # SL - Stop Loss
+        exchange.create_order(
+            symbol=symbol,
+            side='sell',
+            type='stop_market',
+            amount=coin_amount,
+            params={
+                'stopPrice': stop_loss_price,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
+        )
+
+        msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
         messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
         print(order)
 
     except Exception as e:
-        print(f"[execute_trade] {type(e).__name__}: {e}")
+        print(f"[open_position] {type(e).__name__}: {e}")
         messagebox.showerror("Hata", f"İşlem sırasında hata oluştu:\n{e}")
+
 
 
 control_frame = tk.Frame(window)
@@ -376,6 +432,6 @@ emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, b
 emir_btn.grid(row=0, column=7, padx=10)
 
 
-#monitor_ram()
+monitor_ram()
 auto_refresh_chart()
 window.mainloop()
