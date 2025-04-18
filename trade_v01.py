@@ -11,7 +11,6 @@ from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from helpers.binance_isolated import set_isolated_mode
 from indicators.harmonic import harmonic_xabcd_validate
-#from folders.ema.emaMurtaza import EMA
 from datetime import datetime, timedelta,timezone
 
 exchange = ccxt.binance({
@@ -288,32 +287,44 @@ def execute_trade():
         print(f"[execute_trade] {type(e).__name__}: {e}")
         messagebox.showerror("Hata", f"İşlem sırasında hata oluştu:\n{e}")
 
-
 def open_position(entry_price, symbol):
     global aktif_emir_id
 
+    raw_symbol = symbol_var.get().strip().upper()
+    symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
+    binance_symbol = symbol.replace("/", "")
+    timeframe = timeframe_var.get()
+    set_isolated_mode('irGpxO0nbn4jKHNqddCdaBQS14L9XJ5NxMBgLlg6vBrwMqGAGlqyjqJb6prmAP42', '6ZxTkk6CEeeWWHdSUwgduUbXQ8Jw1IL6GN7NTOt95fgoFktPC0qYM1GfhK8VbAag', binance_symbol)
+    df = get_ohlcv(symbol, timeframe)
+    if df is None or df.empty:
+        messagebox.showwarning("Uyarı", "İşlem için geçerli veri alınamadı!")
+        return
+
     try:
+        # Pozisyon parametreleri
         usdt_amount = 0.6  # Pozisyon büyüklüğü USDT olarak
         leverage = 10      # Kaldıraç
 
         exchange.set_leverage(leverage, symbol=symbol)
 
-            # Son fiyat
+        # Son fiyat
         market_price = df['close'].iloc[-1]
         coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
-            # Long yönlü market emri gönder
+        # Long yönlü market emri gönder
         order = exchange.create_market_order(
-                symbol=symbol,
-                side='buy',
-                amount=coin_amount
-            )
+            symbol=symbol,
+            side='buy',
+            amount=coin_amount
+        )
 
         msg = f"[LONG] Anlık işlem açıldı - {symbol}"
         messagebox.showinfo("Başarılı", f"{msg}\nOrder ID: {order['id']}")
         print(order)
+
     except Exception as e:
-        add_log(f"[Pozisyon Açma] {type(e).__name__}: {e}")
+        print(f"[execute_trade] {type(e).__name__}: {e}")
+        messagebox.showerror("Hata", f"İşlem sırasında hata oluştu:\n{e}")
 
 
 control_frame = tk.Frame(window)
