@@ -5,13 +5,12 @@ import pandas as pd
 import mplfinance as mpf
 import tkinter as tk
 import gc
-import psutil, os
-import sys
-import time
+import  os
 import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from indicators.harmonic import harmonic_xabcd_validate
+import İndicators
+#from İndicators.harmonic import harmonic_xabcd_validate
 import Utils
 import Utils.globals as globals
 from datetime import datetime, timedelta,timezone
@@ -33,26 +32,8 @@ should_auto_refresh = tk.BooleanVar(value=True)
 opened_patterns = set()  
 
 
-def monitor_ram():
-    process = psutil.Process(os.getpid())
-    used_ram = process.memory_info().rss / 1024**2
 
-    # Terminalin en üst satırına RAM yaz
-    sys.stdout.write("\033[1;1H")  # 1. satır, 1. sütuna git
-    sys.stdout.write(f"[RAM Takip] Anlık RAM kullanımı: {used_ram:.2f} MB")
-    sys.stdout.flush()
 
-    # Altına çizgi çiz (2. satıra)
-    sys.stdout.write("\033[2;1H" + "-" * 80)
-    sys.stdout.flush()
-
-    # Pattern loglarını 3. satırdan itibaren bas
-    for i, line in enumerate(logs[-20:]):
-        sys.stdout.write(f"\033[{3+i};1H{line.ljust(80)}")
-    sys.stdout.flush()
-
-    # Her 5 saniyede bir tekrar et
-    window.after(5000, monitor_ram)
 def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
@@ -90,7 +71,7 @@ def detect_and_draw_recent_harmonics(df, ax):
             cX, cY = i - 1, c['high']
             dX, dY = i, d['low']
 
-            result = harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
+            result = İndicators.harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
             is_valid, gart, bat, bfly, crab, shark, cyph = result
 
             if is_valid:
@@ -423,7 +404,5 @@ def log_emir_durumu():
 emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
 emir_btn.grid(row=0, column=7, padx=10)
 
-
-monitor_ram()
 auto_refresh_chart()
 window.mainloop()
