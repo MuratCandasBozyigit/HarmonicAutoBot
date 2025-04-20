@@ -1,4 +1,5 @@
 ﻿from ast import Add
+from email import utils
 import ccxt
 import pandas as pd
 import mplfinance as mpf
@@ -10,8 +11,9 @@ import time
 import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from helpers.binance_isolated import set_isolated_mode
 from indicators.harmonic import harmonic_xabcd_validate
+import Utils
+import Utils.globals as globals
 from datetime import datetime, timedelta,timezone
 
 
@@ -29,15 +31,7 @@ window.geometry("1280x560")
 
 should_auto_refresh = tk.BooleanVar(value=True)
 opened_patterns = set()  
-emir_acik = False
-aktif_emir_id = None
-last_candle_time = None 
-df = None
-canvas = None
-fig = None
-ax = None
-symbol = None
-timeframe = None
+
 
 def monitor_ram():
     process = psutil.Process(os.getpid())
@@ -112,11 +106,11 @@ def detect_and_draw_recent_harmonics(df, ax):
                 #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
                 add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
-                if dX == len(df) - 7 and emir_acik:
+                if dX == len(df) - 7 and globals.emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
-                    if emir_acik:
+                    if globals.emir_acik:
                         if pattern_id not in opened_patterns:
-                            open_position(dY, symbol)
+                            open_position(dY, globals.symbol)
                             opened_patterns.add(pattern_id)
                         add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
                     else:
@@ -126,9 +120,9 @@ def detect_and_draw_recent_harmonics(df, ax):
     except Exception as e:
         add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 def show_chart(event=None):
-    global df, fig, ax, canvas, symbol, timeframe
+   
     def clear_canvas():
-        global canvas, fig, ax
+       
         if canvas:
             canvas.get_tk_widget().destroy()
             canvas = None
@@ -184,48 +178,47 @@ def show_chart(event=None):
 
     gc.collect()
 def update_last_candle():
-    global df, ax, canvas, symbol
-    if df is None or symbol is None:
+    
+    if globals.df is None or globals.symbol is None:
         return
 
     try:
-        ticker = exchange.fetch_ticker(symbol)
+        ticker = exchange.fetch_ticker(globals.symbol)
         last_price = ticker['last']
-        high = max(df.iloc[-1]['high'], last_price)
-        low = min(df.iloc[-1]['low'], last_price)
+        high = max(globals.df.iloc[-1]['high'], last_price)
+        low = min(globals.df.iloc[-1]['low'], last_price)
 
-        df.loc[df.index[-1], 'close'] = last_price
-        df.loc[df.index[-1], 'high'] = high
-        df.loc[df.index[-1], 'low'] = low
+        globals.df.loc[globals.df.index[-1], 'close'] = last_price
+        globals.df.loc[globals.df.index[-1], 'high'] = high
+        globals.df.loc[globals.df.index[-1], 'low'] = low
 
 
-        ax.clear()
+        globals.ax.clear()
         mpf.plot(
-            df,
+            globals.df,
             type='candle',
             style='yahoo',
-            ax=ax,
+            ax=globals.ax,
             volume=False,
             returnfig=False
         )
 
-        detect_and_draw_recent_harmonics(df, ax)
-        canvas.draw_idle()
+        detect_and_draw_recent_harmonics(globals.df, globals.ax)
+        globals.canvas.draw_idle()
 
         gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
 def auto_refresh_chart():
-    global last_candle_time
-
-    if not should_auto_refresh.get() or df is None:
+  
+    if not should_auto_refresh.get() or globals.df is None:
         window.after(1000, auto_refresh_chart)
         return
 
     try:
         # Şu anki zaman ve son mumun zamanı
         now = datetime.now(timezone.utc)
-        last_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+        last_time = globals.df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
 
 
         # Eğer yeni bir mum oluşmuşsa, tüm veriyi güncelle
@@ -234,12 +227,12 @@ def auto_refresh_chart():
 
         # Timeframe'e göre mum süresi
         tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
-        tf_seconds = tf_map.get(timeframe, 60)
+        tf_seconds = tf_map.get(globals.timeframe, 60)
 
         if (now - last_candle_time).total_seconds() >= tf_seconds:
             print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
             show_chart()
-            last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+            last_candle_time = globals.df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
         else:
             update_last_candle()
 
@@ -255,7 +248,7 @@ def execute_trade():
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = timeframe_var.get()
-    set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
+    Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
     df = get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
@@ -319,12 +312,12 @@ def execute_trade():
         print(f"[execute_trade] {type(e).__name__}: {e}")
         print("Hata", f"İşlem sırasında hata oluştu:\n{e}")
 def open_position(entry_price, symbol):
-    global aktif_emir_id
+   
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = timeframe_var.get()
-    set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
+    Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
     df = get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
@@ -415,13 +408,13 @@ chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
 
 def toggle_emir():
-    global emir_acik
-    emir_acik = not emir_acik
+    
+    emir_acik = not globals.emir_acik
     emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
     log_emir_durumu()
 
 def log_emir_durumu():
-    if emir_acik:
+    if globals.emir_acik:
         print("[Emir Kontrol] ✅ Emir aranıyor...")
     else:
         print("[Emir Kontrol] ⛔ Emir modu kapalı.")
