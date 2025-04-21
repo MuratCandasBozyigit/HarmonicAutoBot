@@ -1,19 +1,19 @@
 ﻿from ast import Add
+from email import utils
 import ccxt
 import pandas as pd
 import mplfinance as mpf
 import tkinter as tk
 import gc
-import psutil, os
-import sys
-import time
+import  os
 import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from helpers.binance_isolated import set_isolated_mode
-from indicators.harmonic import harmonic_xabcd_validate
+import İndicators
+import Utils
+import Utils.globals as globals
+import Cmd
 from datetime import datetime, timedelta,timezone
-
 
 exchange = ccxt.binance({
     'apiKey':'991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3',
@@ -29,54 +29,7 @@ window.geometry("1280x560")
 
 should_auto_refresh = tk.BooleanVar(value=True)
 opened_patterns = set()  
-emir_acik = False
-aktif_emir_id = None
-last_candle_time = None 
-df = None
-canvas = None
-fig = None
-ax = None
-symbol = None
-timeframe = None
 
-def monitor_ram():
-    process = psutil.Process(os.getpid())
-    used_ram = process.memory_info().rss / 1024**2
-
-    # Terminalin en üst satırına RAM yaz
-    sys.stdout.write("\033[1;1H")  # 1. satır, 1. sütuna git
-    sys.stdout.write(f"[RAM Takip] Anlık RAM kullanımı: {used_ram:.2f} MB")
-    sys.stdout.flush()
-
-    # Altına çizgi çiz (2. satıra)
-    sys.stdout.write("\033[2;1H" + "-" * 80)
-    sys.stdout.flush()
-
-    # Pattern loglarını 3. satırdan itibaren bas
-    for i, line in enumerate(logs[-20:]):
-        sys.stdout.write(f"\033[{3+i};1H{line.ljust(80)}")
-    sys.stdout.flush()
-
-    # Her 5 saniyede bir tekrar et
-    window.after(5000, monitor_ram)
-def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
-    try:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
-        df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
-        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
-        df.set_index("timestamp", inplace=True)
-        df = df.dropna()
-        if df.empty or len(df) < 100:
-            print(f"[get_ohlcv] Veri yetersiz: {len(df)} bar")
-            return None
-        return df
-    except Exception as e:
-        messagebox.showerror("Hata", f"Veri çekilirken hata oluştu:\n{str(e)}")
-        print(f"[get_ohlcv] {type(e).__name__}: {e}")
-        return None
-logs = []  
-def add_log(msg):
-    logs.append(msg)
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
@@ -96,7 +49,7 @@ def detect_and_draw_recent_harmonics(df, ax):
             cX, cY = i - 1, c['high']
             dX, dY = i, d['low']
 
-            result = harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
+            result = İndicators.harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
             is_valid, gart, bat, bfly, crab, shark, cyph = result
 
             if is_valid:
@@ -110,25 +63,25 @@ def detect_and_draw_recent_harmonics(df, ax):
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
-                add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
+                Cmd.add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
-                if dX == len(df) - 7 and emir_acik:
+                if dX == len(df) - 7 and globals.emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
-                    if emir_acik:
+                    if globals.emir_acik:
                         if pattern_id not in opened_patterns:
-                            open_position(dY, symbol)
+                            open_position(dY, globals.symbol)
                             opened_patterns.add(pattern_id)
-                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
+                        Cmd.add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
                     else:
-                        add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
+                        Cmd.add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
 
         gc.collect()
     except Exception as e:
-        add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
+        Cmd.add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 def show_chart(event=None):
-    global df, fig, ax, canvas, symbol, timeframe
+   
     def clear_canvas():
-        global canvas, fig, ax
+       
         if canvas:
             canvas.get_tk_widget().destroy()
             canvas = None
@@ -150,7 +103,7 @@ def show_chart(event=None):
         messagebox.showwarning("Uyarı", "Lütfen coin ve zaman dilimi seçiniz.")
         return
 
-    df = get_ohlcv(symbol, timeframe, limit=limit_var.get())
+    df = Utils.get_ohlcv(symbol, timeframe, limit=limit_var.get())
     if df is None or df.empty:
         messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
@@ -184,48 +137,47 @@ def show_chart(event=None):
 
     gc.collect()
 def update_last_candle():
-    global df, ax, canvas, symbol
-    if df is None or symbol is None:
+    
+    if globals.df is None or globals.symbol is None:
         return
 
     try:
-        ticker = exchange.fetch_ticker(symbol)
+        ticker = exchange.fetch_ticker(globals.symbol)
         last_price = ticker['last']
-        high = max(df.iloc[-1]['high'], last_price)
-        low = min(df.iloc[-1]['low'], last_price)
+        high = max(globals.df.iloc[-1]['high'], last_price)
+        low = min(globals.df.iloc[-1]['low'], last_price)
 
-        df.loc[df.index[-1], 'close'] = last_price
-        df.loc[df.index[-1], 'high'] = high
-        df.loc[df.index[-1], 'low'] = low
+        globals.df.loc[globals.df.index[-1], 'close'] = last_price
+        globals.df.loc[globals.df.index[-1], 'high'] = high
+        globals.df.loc[globals.df.index[-1], 'low'] = low
 
 
-        ax.clear()
+        globals.ax.clear()
         mpf.plot(
-            df,
+            globals.df,
             type='candle',
             style='yahoo',
-            ax=ax,
+            ax=globals.ax,
             volume=False,
             returnfig=False
         )
 
-        detect_and_draw_recent_harmonics(df, ax)
-        canvas.draw_idle()
+        detect_and_draw_recent_harmonics(globals.df, globals.ax)
+        globals.canvas.draw_idle()
 
         gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
 def auto_refresh_chart():
-    global last_candle_time
-
-    if not should_auto_refresh.get() or df is None:
+  
+    if not should_auto_refresh.get() or globals.df is None:
         window.after(1000, auto_refresh_chart)
         return
 
     try:
         # Şu anki zaman ve son mumun zamanı
         now = datetime.now(timezone.utc)
-        last_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+        last_time = globals.df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
 
 
         # Eğer yeni bir mum oluşmuşsa, tüm veriyi güncelle
@@ -234,12 +186,12 @@ def auto_refresh_chart():
 
         # Timeframe'e göre mum süresi
         tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
-        tf_seconds = tf_map.get(timeframe, 60)
+        tf_seconds = tf_map.get(globals.timeframe, 60)
 
         if (now - last_candle_time).total_seconds() >= tf_seconds:
             print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
             show_chart()
-            last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+            last_candle_time = globals.df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
         else:
             update_last_candle()
 
@@ -255,9 +207,9 @@ def execute_trade():
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = timeframe_var.get()
-    set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
+    Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
-    df = get_ohlcv(symbol, timeframe)
+    df = Utils.get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
         print("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
@@ -277,8 +229,6 @@ def execute_trade():
             side='buy',
             amount=coin_amount
         )
-
-       
 
         entry_price = float(order['average']) if 'average' in order else market_price
         take_profit_price = round(entry_price * 1.005, 2)  # +0.5%
@@ -310,7 +260,6 @@ def execute_trade():
             }
         )
 
-
         msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
         print("Başarılı", f"{msg}\nOrder ID: {order['id']}")
         print(order)
@@ -319,14 +268,14 @@ def execute_trade():
         print(f"[execute_trade] {type(e).__name__}: {e}")
         print("Hata", f"İşlem sırasında hata oluştu:\n{e}")
 def open_position(entry_price, symbol):
-    global aktif_emir_id
+   
     raw_symbol = symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = timeframe_var.get()
-    set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
+    Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
-    df = get_ohlcv(symbol, timeframe)
+    df = Utils.get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
         print("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
@@ -380,9 +329,6 @@ def open_position(entry_price, symbol):
 
     except Exception as e:
         print(f"[open_position] {type(e).__name__}: {e}")
-    
-
-
 
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
@@ -415,22 +361,16 @@ chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
 
 def toggle_emir():
-    global emir_acik
-    emir_acik = not emir_acik
+    
+    emir_acik = not globals.emir_acik
     emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
     log_emir_durumu()
-
 def log_emir_durumu():
-    if emir_acik:
+    if globals.emir_acik:
         print("[Emir Kontrol] ✅ Emir aranıyor...")
     else:
         print("[Emir Kontrol] ⛔ Emir modu kapalı.")
-
-
 emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
 emir_btn.grid(row=0, column=7, padx=10)
-
-
-monitor_ram()
 auto_refresh_chart()
 window.mainloop()
