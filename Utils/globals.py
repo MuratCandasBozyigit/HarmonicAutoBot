@@ -4,6 +4,8 @@ import tkinter as tk
 
 load_dotenv()  
 
+root = None 
+limit_var = None
 symbol_var = None
 timeframe_var = None
 is_order_mode_enabled = False
@@ -16,6 +18,8 @@ fig = None
 ax = None
 symbol = None
 timeframe = None
+should_auto_refresh = None
+
 
 api_key = os.getenv("TEST_API_KEY") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_KEY")
 api_secret = os.getenv("TEST_API_SECRET") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_SECRET")

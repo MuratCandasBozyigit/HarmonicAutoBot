@@ -14,25 +14,10 @@ import Utils.globals as globals
 import Cmd
 import Order
 import Chart
-# Binance Futures Exchange tanımı
-exchange = ccxt.binance({
-    'apiKey': globals.api_key,
-    'secret': globals.api_secret,
-    'enableRateLimit': True,
-    'options': {'defaultType': 'future'}
-})
-exchange.set_sandbox_mode(globals.use_testnet)
-
-# Ana pencere
-window = tk.Tk()
-window.title("Harmonic Gözlem Paneli - v0.5")
-window.geometry("1280x560")
-
-should_auto_refresh = tk.BooleanVar(value=True)
+import Gui
 opened_patterns = set()
 last_candle_time = None
 
-# Harmonik desenleri tespit edip çizme
 
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
@@ -79,3 +64,8 @@ def detect_and_draw_recent_harmonics(df, ax):
     except Exception as e:
         Cmd.add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 
+if __name__ == "__main__":
+    root = tk.Tk()
+    globals.root = root
+    Gui.build_gui(root)
+    root.mainloop()

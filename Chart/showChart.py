@@ -1,10 +1,13 @@
-﻿import Gui
+﻿import gc
+import datetime
 
-should_auto_refresh = Gui.tk.BooleanVar(value=True)
+import Utils
+import Gui
+import Utils.globals as globals
 
 def show_chart(event=None):
     global last_candle_time
-    Gui.gc.collect()
+    gc.collect()
 
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
@@ -14,18 +17,18 @@ def show_chart(event=None):
         Gui.messagebox.showwarning("Uyarı", "Lütfen coin ve zaman dilimi seçiniz.")
         return
 
-    df = Gui.Utils.get_ohlcv(symbol, timeframe, limit=Gui.limit_var.get())
+    df =Utils.get_ohlcv(symbol, timeframe, limit=globals.limit_var.get())
     if df is None or df.empty:
         Gui.messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
 
     df = df.dropna()
-    df = df.iloc[-Gui.limit_var.get():]
+    df = df.iloc[-globals.limit_var.get():]
     globals.df = df
     globals.symbol = symbol
     globals.timeframe = timeframe
 
-    for widget in Gui.Gui.chart_frame.winfo_children():
+    for widget in Gui.chart_frame.winfo_children():
         widget.destroy()
 
     fig, axlist = Gui.mpf.plot(
@@ -72,16 +75,16 @@ def update_last_candle():
         )
         Gui.detect_and_draw_recent_harmonics(globals.df, globals.ax)
         globals.canvas.draw_idle()
-        Gui.gc.collect()
+        gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
 def auto_refresh_chart():
     global last_candle_time
-    if not should_auto_refresh.get() or globals.df is None:
+    if not globals.should_auto_refresh.get()  :
         Gui.window.after(1000, auto_refresh_chart)
         return
     try:
-        now = Gui.datetime.now(Gui.timezone.utc)
+        now = datetime.now(Gui.timezone.utc)
         tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
         tf_seconds = tf_map.get(globals.timeframe, 60)
 
@@ -92,6 +95,6 @@ def auto_refresh_chart():
             update_last_candle()
     except Exception as e:
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
-    Gui.window.after(1000, auto_refresh_chart)
-def pause_refresh(event): should_auto_refresh.set(False)
-def resume_refresh(event): should_auto_refresh.set(True)
+    globals.root.after(1000, auto_refresh_chart)
+def pause_refresh(event): Gui.should_auto_refresh.set(False)
+def resume_refresh(event):  Gui.should_auto_refresh.set(True)

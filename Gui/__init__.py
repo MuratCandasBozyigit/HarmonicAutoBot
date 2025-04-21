@@ -1,1 +1,1 @@
-﻿from .mainFrame import *
+﻿from .mainFrame import build_gui
