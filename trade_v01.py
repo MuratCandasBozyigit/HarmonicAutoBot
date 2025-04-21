@@ -1,36 +1,38 @@
-﻿from ast import Add
-from email import utils
-import ccxt
+﻿import ccxt
 import pandas as pd
 import mplfinance as mpf
 import tkinter as tk
+import os
 import gc
-import  os
-import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from datetime import datetime, timedelta, timezone
+
 import İndicators
 import Utils
 import Utils.globals as globals
 import Cmd
 import Order
-from datetime import datetime, timedelta,timezone
 
+# Binance Futures Exchange tanımı
 exchange = ccxt.binance({
-        'apiKey': globals.api_key,
-        'secret': globals.api_secret,
-        'enableRateLimit': True,
-        'options': {'defaultType': 'future'}
-    })
+    'apiKey': globals.api_key,
+    'secret': globals.api_secret,
+    'enableRateLimit': True,
+    'options': {'defaultType': 'future'}
+})
 exchange.set_sandbox_mode(globals.use_testnet)
 
-
+# Ana pencere
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.5")
 window.geometry("1280x560")
 
 should_auto_refresh = tk.BooleanVar(value=True)
-opened_patterns = set()  
+opened_patterns = set()
+last_candle_time = None
+
+# Harmonik desenleri tespit edip çizme
 
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
@@ -64,37 +66,23 @@ def detect_and_draw_recent_harmonics(df, ax):
                 ax.plot(xs, ys, color='darkgreen', linewidth=1.4)
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
-                #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
+
                 Cmd.add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
                 if dX == len(df) - 7 and globals.emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
-                    if globals.emir_acik:
-                        if pattern_id not in opened_patterns:
-                            open_position(dY, globals.symbol)
-                            opened_patterns.add(pattern_id)
+                    if pattern_id not in opened_patterns:
+                        Order.open_position(dY, globals.symbol)
+                        opened_patterns.add(pattern_id)
                         Cmd.add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
-                    else:
-                        Cmd.add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
-
         gc.collect()
     except Exception as e:
         Cmd.add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
-def show_chart(event=None):
-   
-    def clear_canvas():
-       
-        if canvas:
-            canvas.get_tk_widget().destroy()
-            canvas = None
-        if fig:
-            fig.clf()
-            del fig
-            fig = None
-    
-    def clear_cmd():
-          os.system('cls' if os.name == 'nt' else 'clear')
 
+# Grafik gösterimi
+
+def show_chart(event=None):
+    global last_candle_time
     gc.collect()
 
     raw_symbol = globals.symbol_var.get().strip().upper()
@@ -110,14 +98,15 @@ def show_chart(event=None):
         messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
 
-    # Veri temizliği (gerekirse)
     df = df.dropna()
     df = df.iloc[-limit_var.get():]
+    globals.df = df
+    globals.symbol = symbol
+    globals.timeframe = timeframe
 
     for widget in chart_frame.winfo_children():
         widget.destroy()
 
-    # Yeni grafik oluşturuluyor
     fig, axlist = mpf.plot(
         df,
         type='candle',
@@ -129,20 +118,21 @@ def show_chart(event=None):
     )
     ax = axlist[0]
 
-    # Harmonik desenler çiziliyor
     detect_and_draw_recent_harmonics(df, ax)
 
-    # tkinter üzerine grafik yerleştiriliyor
     canvas = FigureCanvasTkAgg(fig, master=chart_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    gc.collect()
+    globals.ax = ax
+    globals.canvas = canvas
+    last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+
+# Son mumu canlı güncelle
+
 def update_last_candle():
-    
     if globals.df is None or globals.symbol is None:
         return
-
     try:
         ticker = exchange.fetch_ticker(globals.symbol)
         last_price = ticker['last']
@@ -153,7 +143,6 @@ def update_last_candle():
         globals.df.loc[globals.df.index[-1], 'high'] = high
         globals.df.loc[globals.df.index[-1], 'low'] = low
 
-
         globals.ax.clear()
         mpf.plot(
             globals.df,
@@ -163,129 +152,49 @@ def update_last_candle():
             volume=False,
             returnfig=False
         )
-
         detect_and_draw_recent_harmonics(globals.df, globals.ax)
         globals.canvas.draw_idle()
-
         gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
+
+# Grafik otomatik yenileme
+
 def auto_refresh_chart():
-  
+    global last_candle_time
     if not should_auto_refresh.get() or globals.df is None:
         window.after(1000, auto_refresh_chart)
         return
-
     try:
-        # Şu anki zaman ve son mumun zamanı
         now = datetime.now(timezone.utc)
-        last_time = globals.df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
-
-
-        # Eğer yeni bir mum oluşmuşsa, tüm veriyi güncelle
-        if last_candle_time is None:
-            last_candle_time = last_time
-
-        # Timeframe'e göre mum süresi
         tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
         tf_seconds = tf_map.get(globals.timeframe, 60)
 
-        if (now - last_candle_time).total_seconds() >= tf_seconds:
+        if last_candle_time and (now - last_candle_time).total_seconds() >= tf_seconds:
             print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
             show_chart()
-            last_candle_time = globals.df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
         else:
             update_last_candle()
-
-
     except Exception as e:
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
-
     window.after(1000, auto_refresh_chart)
+
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
 
-def open_position(entry_price, symbol):
-   
-    raw_symbol = globals.symbol_var.get().strip().upper()
-    symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
-    binance_symbol = symbol.replace("/", "")
-    timeframe = globals.timeframe_var.get()
-    Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
-
-    df = Utils.get_ohlcv(symbol, timeframe)
-    if df is None or df.empty:
-        print("Uyarı", "İşlem için geçerli veri alınamadı!")
-        return
-
-    try:
-        usdt_amount = 15
-        leverage = 10
-
-        exchange.set_leverage(leverage, symbol=symbol)
-        market_price = df['close'].iloc[-1]
-        coin_amount = round((usdt_amount * leverage) / market_price, 3)
-
-        # Long pozisyon aç
-        order = exchange.create_market_order(
-            symbol=symbol,
-            side='buy',
-            amount=coin_amount
-        )
-
-        entry_price = float(order['average']) if 'average' in order else market_price
-        take_profit_price = round(entry_price * 1.005, 2)  # +0.5%
-        stop_loss_price = round(entry_price * 0.99, 2)     # -1%
-
-        # TP emri
-        exchange.create_order(
-            symbol=symbol,
-            type='take_profit_market',
-            side='sell',
-            amount=coin_amount,
-            params={
-                'stopPrice': take_profit_price,
-                'reduceOnly': True,
-                'workingType': 'MARK_PRICE'
-            }
-        )
-
-        # SL emri
-        exchange.create_order(
-            symbol=symbol,
-            type='stop_market',
-            side='sell',
-            amount=coin_amount,
-            params={
-                'stopPrice': stop_loss_price,
-                'reduceOnly': True,
-                'workingType': 'MARK_PRICE'
-            }
-        )
-     
-        print(order)
-
-    except Exception as e:
-        print(f"[open_position] {type(e).__name__}: {e}")
-
+# Kontrol paneli
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
 
-globals.symbol_var = tk.StringVar()
-globals.timeframe_var = tk.StringVar()
-
-
 limit_var = tk.IntVar(value=100)
 tk.Label(control_frame, text="Bar Sayısı:").grid(row=0, column=5, padx=5)
-limit_spinbox = tk.Spinbox(control_frame, from_=50, to=1000, increment=50, textvariable=limit_var, width=5)
-limit_spinbox.grid(row=0, column=6, padx=5)
+tk.Spinbox(control_frame, from_=50, to=1000, increment=50, textvariable=limit_var, width=5).grid(row=0, column=6, padx=5)
 
 tk.Label(control_frame, text="Coin (örn: BTC veya BTC/USDT):").grid(row=0, column=0, padx=5)
 globals.symbol_var = tk.StringVar()
 symbol_entry = tk.Entry(control_frame, textvariable=globals.symbol_var, width=20)
 symbol_entry.grid(row=0, column=1, padx=5)
 symbol_entry.insert(0, "BTC")
-
 symbol_entry.bind("<FocusIn>", pause_refresh)
 symbol_entry.bind("<FocusOut>", resume_refresh)
 symbol_entry.bind("<Return>", lambda e: [show_chart(), resume_refresh(e)])
@@ -299,20 +208,18 @@ timeframe_combo.current(3)
 tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), resume_refresh(None)]).grid(row=0, column=4, padx=5)
 tk.Button(control_frame, text="Anlık Long Aç", command=Order.execute_trade).grid(row=0, column=5, padx=5)
 
+emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", bg="lightgreen")
+def toggle_emir():
+    globals.emir_acik = not globals.emir_acik
+    emir_btn.config(text="🔴 Emir Arıyor..." if globals.emir_acik else "🟢 Emir Aç!")
+    print("[Emir Kontrol]", "✅ Emir aranıyor..." if globals.emir_acik else "⛔ Emir modu kapalı.")
+emir_btn.config(command=toggle_emir)
+emir_btn.grid(row=0, column=7, padx=10)
+
+# Grafik alanı
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
 
-def toggle_emir():
-    
-    emir_acik = not globals.emir_acik
-    emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
-    log_emir_durumu()
-def log_emir_durumu():
-    if globals.emir_acik:
-        print("[Emir Kontrol] ✅ Emir aranıyor...")
-    else:
-        print("[Emir Kontrol] ⛔ Emir modu kapalı.")
-emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
-emir_btn.grid(row=0, column=7, padx=10)
+# Başlat
 auto_refresh_chart()
 window.mainloop()

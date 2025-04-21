@@ -2,11 +2,11 @@
 from dotenv import load_dotenv
 import tkinter as tk
 
-load_dotenv()  # .env dosyasını yükle
+load_dotenv()  
 
 symbol_var = None
 timeframe_var = None
-
+is_order_mode_enabled = False
 emir_acik = False
 aktif_emir_id = None
 last_candle_time = None 
@@ -17,7 +17,6 @@ ax = None
 symbol = None
 timeframe = None
 
-# .env'den ayarları çek
 api_key = os.getenv("TEST_API_KEY") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_KEY")
 api_secret = os.getenv("TEST_API_SECRET") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_SECRET")
 

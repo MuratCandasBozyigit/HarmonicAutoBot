@@ -4,6 +4,9 @@ import Utils
 import os
 
 def open_position(entry_price, symbol_input=None):
+    if not globals.is_order_mode_enabled:
+        print("Emir modu kapalı, işlem açılmadı.")
+        return
     try:
         # Sembolü al ve formatla
         raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
