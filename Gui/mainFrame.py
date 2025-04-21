@@ -75,12 +75,12 @@ def build_gui(root):
 
     tk.Button(control_frame, text="Anlık Long Aç", command=Order.execute_trade).grid(row=0, column=8, padx=5)
 
-    emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", bg="lightgreen")
+    emir_btn = tk.Button(control_frame, text="🟢Long Emir Aç", bg="lightgreen")
 
     def toggle_emir():
         globals.emir_acik = not globals.emir_acik
-        emir_btn.config(text="🔴 Emir Arıyor..." if globals.emir_acik else "🟢 Emir Aç!")
-        print("[Emir Kontrol]", "✅ Emir aranıyor..." if globals.emir_acik else "⛔ Emir modu kapalı.")
+        emir_btn.config(text="🔴Long Emir Arıyor..." if globals.emir_acik else "🟢Long Emir Aç!")
+        print("[Emir Kontrol]", "✅Long Emir aranıyor..." if globals.emir_acik else "⛔Long Emir modu kapalı.")
 
     emir_btn.config(command=toggle_emir)
     emir_btn.grid(row=0, column=7, padx=10)
