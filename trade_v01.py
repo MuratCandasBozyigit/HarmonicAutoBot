@@ -13,15 +13,17 @@ import İndicators
 import Utils
 import Utils.globals as globals
 import Cmd
+import Order
 from datetime import datetime, timedelta,timezone
 
 exchange = ccxt.binance({
-    'apiKey':'991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3',
-    'secret':'4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb',
-    'enableRateLimit': True,
-    'options': {'defaultType': 'future'}
-})
-exchange.set_sandbox_mode(True) 
+        'apiKey': globals.api_key,
+        'secret': globals.api_secret,
+        'enableRateLimit': True,
+        'options': {'defaultType': 'future'}
+    })
+exchange.set_sandbox_mode(globals.use_testnet)
+
 
 window = tk.Tk()
 window.title("Harmonic Gözlem Paneli - v0.5")
@@ -95,9 +97,9 @@ def show_chart(event=None):
 
     gc.collect()
 
-    raw_symbol = symbol_var.get().strip().upper()
+    raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
-    timeframe = timeframe_var.get()
+    timeframe = globals.timeframe_var.get()
 
     if not symbol or not timeframe:
         messagebox.showwarning("Uyarı", "Lütfen coin ve zaman dilimi seçiniz.")
@@ -202,77 +204,13 @@ def auto_refresh_chart():
     window.after(1000, auto_refresh_chart)
 def pause_refresh(event): should_auto_refresh.set(False)
 def resume_refresh(event): should_auto_refresh.set(True)
-def execute_trade():
-    raw_symbol = symbol_var.get().strip().upper()
-    symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
-    binance_symbol = symbol.replace("/", "")
-    timeframe = timeframe_var.get()
-    Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
-    df = Utils.get_ohlcv(symbol, timeframe)
-    if df is None or df.empty:
-        print("Uyarı", "İşlem için geçerli veri alınamadı!")
-        return
-
-    try:
-        usdt_amount = 15  # Pozisyon büyüklüğü USDT
-        leverage = 10     # Kaldıraç
-
-        exchange.set_leverage(leverage, symbol=symbol)
-
-        market_price = df['close'].iloc[-1]
-        coin_amount = round((usdt_amount * leverage) / market_price, 3)
-
-        # Long pozisyon aç
-        order = exchange.create_market_order(
-            symbol=symbol,
-            side='buy',
-            amount=coin_amount
-        )
-
-        entry_price = float(order['average']) if 'average' in order else market_price
-        take_profit_price = round(entry_price * 1.005, 2)  # +0.5%
-        stop_loss_price = round(entry_price * 0.99, 2)     # -1%
-
-        # TP emri
-        exchange.create_order(
-            symbol=symbol,
-            type='take_profit_market',
-            side='sell',
-            amount=coin_amount,
-            params={
-                'stopPrice': take_profit_price,
-                'reduceOnly': True,
-                'workingType': 'MARK_PRICE'
-            }
-        )
-
-        # SL emri
-        exchange.create_order(
-            symbol=symbol,
-            type='stop_market',
-            side='sell',
-            amount=coin_amount,
-            params={
-                'stopPrice': stop_loss_price,
-                'reduceOnly': True,
-                'workingType': 'MARK_PRICE'
-            }
-        )
-
-        msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
-        print("Başarılı", f"{msg}\nOrder ID: {order['id']}")
-        print(order)
-
-    except Exception as e:
-        print(f"[execute_trade] {type(e).__name__}: {e}")
-        print("Hata", f"İşlem sırasında hata oluştu:\n{e}")
 def open_position(entry_price, symbol):
    
-    raw_symbol = symbol_var.get().strip().upper()
+    raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
-    timeframe = timeframe_var.get()
+    timeframe = globals.timeframe_var.get()
     Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
     df = Utils.get_ohlcv(symbol, timeframe)
@@ -333,14 +271,18 @@ def open_position(entry_price, symbol):
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
 
+globals.symbol_var = tk.StringVar()
+globals.timeframe_var = tk.StringVar()
+
+
 limit_var = tk.IntVar(value=100)
 tk.Label(control_frame, text="Bar Sayısı:").grid(row=0, column=5, padx=5)
 limit_spinbox = tk.Spinbox(control_frame, from_=50, to=1000, increment=50, textvariable=limit_var, width=5)
 limit_spinbox.grid(row=0, column=6, padx=5)
 
 tk.Label(control_frame, text="Coin (örn: BTC veya BTC/USDT):").grid(row=0, column=0, padx=5)
-symbol_var = tk.StringVar()
-symbol_entry = tk.Entry(control_frame, textvariable=symbol_var, width=20)
+globals.symbol_var = tk.StringVar()
+symbol_entry = tk.Entry(control_frame, textvariable=globals.symbol_var, width=20)
 symbol_entry.grid(row=0, column=1, padx=5)
 symbol_entry.insert(0, "BTC")
 
@@ -349,13 +291,13 @@ symbol_entry.bind("<FocusOut>", resume_refresh)
 symbol_entry.bind("<Return>", lambda e: [show_chart(), resume_refresh(e)])
 
 tk.Label(control_frame, text="Zaman Dilimi:").grid(row=0, column=2, padx=5)
-timeframe_var = tk.StringVar()
-timeframe_combo = ttk.Combobox(control_frame, textvariable=timeframe_var, values=["1m", "5m", "15m", "1h", "4h", "1d"])
+globals.timeframe_var = tk.StringVar()
+timeframe_combo = ttk.Combobox(control_frame, textvariable=globals.timeframe_var, values=["1m", "5m", "15m", "1h", "4h", "1d"])
 timeframe_combo.grid(row=0, column=3, padx=5)
 timeframe_combo.current(3)
 
 tk.Button(control_frame, text="Veriyi Göster", command=lambda: [show_chart(), resume_refresh(None)]).grid(row=0, column=4, padx=5)
-tk.Button(control_frame, text="Anlık Long Aç", command=execute_trade).grid(row=0, column=5, padx=5)
+tk.Button(control_frame, text="Anlık Long Aç", command=Order.execute_trade).grid(row=0, column=5, padx=5)
 
 chart_frame = tk.Frame(window)
 chart_frame.pack(fill="both", expand=False)
