@@ -1,4 +1,4 @@
-﻿from İndicators.AutoHarmonic import DTB, zigzag, ABCD_Formasyn
+﻿from İndicators.AH import DTB, zigzag, ABCD_Formasyn
 class WMHarmonicDetector:
     def __init__(self, zigzag_lines, zigzag_ratios, err_percent=10, enabled_patterns=None):
         self.zz = zigzag_lines

@@ -1,4 +1,4 @@
-﻿from İndicators.AutoHarmonic import  DTB, zigzag, typee
+﻿from İndicators.AH import  DTB, zigzag, typee
 class HarmonicPatterns:
     def __init__(self, zigzag_lines, zigzag_ratios, err_percent=10, abcd_types_enabled=(True, True, True)):
         self.zigzag_lines = zigzag_lines

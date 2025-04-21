@@ -1,4 +1,4 @@
-﻿from İndicators.AutoHarmonic import ABCD_Formasyn, zigzag, typee
+﻿from İndicators.AH import ABCD_Formasyn, zigzag, typee
 
 class DoubleTopBottomDetector:
     def __init__(self, zigzag_lines, zigzag_dirs, max_risk_per_reward=40):

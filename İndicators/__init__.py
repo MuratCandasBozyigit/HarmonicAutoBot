@@ -1,2 +1,2 @@
 ﻿from .harmonic import *
-from .AutoHarmonic import ABCD_Formasyn,zigzag,DTB,typee
+from .AH import ABCD_Formasyn,zigzag,DTB,typee

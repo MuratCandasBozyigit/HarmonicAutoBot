@@ -6,6 +6,10 @@ import DrawPattern
 import Utils.globals as globals
 import mplfinance as mpf
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import İndicators
+#import İndicators.AutoHarmonic_V1
+from İndicators.AutoHarmonic_V1 import AutoHarmonic
+
 
 
 def show_chart(event=None):
@@ -75,8 +79,13 @@ def update_last_candle():
             returnfig=False
         )
         #DrawPattern.detect_and_draw_recent_harmonics(globals.df, globals.ax)
-        DrawPattern.detect_and_draw_recent_harmonics_1(globals.df, globals.ax)
-        globals.canvas.draw_idle()
+        #DrawPattern.detect_and_draw_recent_harmonics_1(globals.df, globals.ax)
+        # İndicators.AutoHarmonic_V1(globals.df, globals.ax, length=10, err_percent=10, deviation_threshold=0)
+        
+        auto = İndicators.AutoHarmonic_V1(globals.df, length=10, err_percent=10, deviation_threshold=0)
+        auto.run()
+        auto.draw(globals.ax)
+        globals.canvas.draw_idle()  
         gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
