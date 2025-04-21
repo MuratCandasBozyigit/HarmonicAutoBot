@@ -3,10 +3,10 @@ import gc
 import İndicators
 import Cmd
 import Order
-
+import Utils
 opened_patterns = set()
 
-def detect_and_draw_recent_harmonics(df, ax):
+def detect_and_draw_recent_harmonics_1(df, ax):
     try:
         # Önce önceki çizimleri sil
         for artist in ax.lines + ax.texts:
@@ -23,7 +23,7 @@ def detect_and_draw_recent_harmonics(df, ax):
         dtb = İndicators.DTB(zz.zigzag_lines, zz.zigzag_dirs)
         dtb.draw(ax=ax)
 
-        wm = detect_and_draw_recent_harmonics(zz.zigzag_lines, zz.zigzag_ratios)
+        wm = İndicators.WMFormasyon(zz.zigzag_lines, zz.zigzag_ratios)
         wm.draw(ax=ax)
 
         # Trade & log kontrolü — en son point D'ye göre

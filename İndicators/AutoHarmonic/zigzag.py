@@ -1,6 +1,6 @@
 ﻿import pandas as pd
 import numpy as np
-
+from İndicators.AutoHarmonic import typee,DTB,ABCD_Formasyn
 class ZigZagDetector:
     def __init__(self, length=10, deviation_threshold=0, show_zz=True, err_percent=10):
         self.length = length

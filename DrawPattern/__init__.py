@@ -1,1 +1,2 @@
 ﻿from .drawHarmonic import detect_and_draw_recent_harmonics
+from .detect_and_draw_recent_harmonics import detect_and_draw_recent_harmonics_1
