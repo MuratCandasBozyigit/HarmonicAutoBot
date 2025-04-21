@@ -2,7 +2,7 @@
 import Utils.globals as globals
 from tkinter import messagebox
 
-def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
+def get_ohlcv(symbol="BTC/USDT", timeframe="15m", limit=300):
     try:
         ohlcv = globals.exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])

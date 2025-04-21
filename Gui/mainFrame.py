@@ -27,7 +27,7 @@ def build_gui(root):
     globals.exchange = exchange
 
     root.title("Harmonic Gözlem Paneli - v0.5")
-    root.geometry("1280x720")
+    root.geometry("750x500")
 
     # Yeni bir üst çerçeve tanımla
     container_frame = tk.Frame(root)
@@ -68,19 +68,19 @@ def build_gui(root):
     timeframe_combo = ttk.Combobox(control_frame, textvariable=globals.timeframe_var,
                                    values=["1m", "5m", "15m", "1h", "4h", "1d"])
     timeframe_combo.grid(row=0, column=3, padx=5)
-    timeframe_combo.current(3)
+    timeframe_combo.current(2)
 
     tk.Button(control_frame, text="Veriyi Göster",
               command=lambda: [Chart.show_chart(), Chart.resume_refresh(None)]).grid(row=0, column=4, padx=5)
 
     tk.Button(control_frame, text="Anlık Long Aç", command=Order.execute_trade).grid(row=0, column=8, padx=5)
 
-    emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", bg="lightgreen")
+    emir_btn = tk.Button(control_frame, text="🟢Long Emir Aç", bg="lightgreen")
 
     def toggle_emir():
         globals.emir_acik = not globals.emir_acik
-        emir_btn.config(text="🔴 Emir Arıyor..." if globals.emir_acik else "🟢 Emir Aç!")
-        print("[Emir Kontrol]", "✅ Emir aranıyor..." if globals.emir_acik else "⛔ Emir modu kapalı.")
+        emir_btn.config(text="🔴Long Emir Arıyor..." if globals.emir_acik else "🟢Long Emir Aç!")
+        print("[Emir Kontrol]", "✅Long Emir aranıyor..." if globals.emir_acik else "⛔Long Emir modu kapalı.")
 
     emir_btn.config(command=toggle_emir)
     emir_btn.grid(row=0, column=7, padx=10)

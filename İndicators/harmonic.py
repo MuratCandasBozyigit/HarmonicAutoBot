@@ -1,4 +1,4 @@
-import math
+﻿import math
 from typing import Tuple, List
 
 # Fibonacci constants
@@ -16,11 +16,11 @@ FIB = {
     "shark_mid": 1.13
 }
 
-def test_symmetry(xax, abx, bcx, cdx=None, pAsym=250.0) -> bool:
+def test_symmetry(xax, abx, bcx, cdx=None, pAsym=950.0) -> bool:
     legs = [xax, abx, bcx] if cdx is None else [xax, abx, bcx, cdx]
     avg = sum(legs) / len(legs)
     for leg in legs:
-        if leg > avg * (1 + pAsym / 100) or leg < avg * (1 - pAsym / 100):
+        if leg > avg * (0 + pAsym / 100) or leg < avg * (0 - pAsym / 100):
             return False
     return True
 
