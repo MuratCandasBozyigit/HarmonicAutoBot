@@ -1,10 +1,11 @@
-﻿import Utils
+﻿import DrawPattern
+import Utils
 import Utils.globals as globals
 import mplfinance as mpf
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from datetime import datetime, timezone
 import gc
-
+import DrawPattern
 def show_chart(event=None):
     gc.collect()
 
@@ -73,7 +74,7 @@ def update_last_candle():
             volume=False,
             returnfig=False
         )
-        #detect_and_draw_recent_harmonics(globals.df, globals.ax)
+        DrawPattern.detect_and_draw_recent_harmonics(globals.df, globals.ax)
         globals.canvas.draw_idle()
         gc.collect()
     except Exception as e:

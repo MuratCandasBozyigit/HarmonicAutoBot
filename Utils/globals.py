@@ -24,6 +24,10 @@ ax = None
 symbol = None
 timeframe = None
 
+tp_percent = 0.5    # Take-profit yüzdesi (örneğin %0.5)
+sl_percent = 0.3    # Stop-loss yüzdesi (örneğin %0.3)
+
+
 # API / Binance Ayarları
 load_dotenv()
 api_key = os.getenv("TEST_API_KEY") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_KEY")
