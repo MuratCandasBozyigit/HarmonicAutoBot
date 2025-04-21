@@ -10,7 +10,6 @@ import threading
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import İndicators
-#from İndicators.harmonic import harmonic_xabcd_validate
 import Utils
 import Utils.globals as globals
 from datetime import datetime, timedelta,timezone
@@ -30,26 +29,14 @@ window.geometry("1280x560")
 
 should_auto_refresh = tk.BooleanVar(value=True)
 opened_patterns = set()  
-
-
-
-
-def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300):
-    try:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
-        df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
-        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
-        df.set_index("timestamp", inplace=True)
-        df = df.dropna()
-        if df.empty or len(df) < 100:
-            print(f"[get_ohlcv] Veri yetersiz: {len(df)} bar")
-            return None
-        return df
-    except Exception as e:
-        messagebox.showerror("Hata", f"Veri çekilirken hata oluştu:\n{str(e)}")
-        print(f"[get_ohlcv] {type(e).__name__}: {e}")
-        return None
 logs = []  
+
+
+
+
+
+
+
 def add_log(msg):
     logs.append(msg)
 def detect_and_draw_recent_harmonics(df, ax):
@@ -125,7 +112,7 @@ def show_chart(event=None):
         messagebox.showwarning("Uyarı", "Lütfen coin ve zaman dilimi seçiniz.")
         return
 
-    df = get_ohlcv(symbol, timeframe, limit=limit_var.get())
+    df = Utils.get_ohlcv(symbol, timeframe, limit=limit_var.get())
     if df is None or df.empty:
         messagebox.showwarning("Uyarı", "Veri alınamadı veya boş!")
         return
@@ -231,7 +218,7 @@ def execute_trade():
     timeframe = timeframe_var.get()
     Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3', '4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
-    df = get_ohlcv(symbol, timeframe)
+    df = Utils.get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
         print("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
@@ -300,7 +287,7 @@ def open_position(entry_price, symbol):
     timeframe = timeframe_var.get()
     Utils.set_isolated_mode('991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3','4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb', binance_symbol)
 
-    df = get_ohlcv(symbol, timeframe)
+    df = Utils.get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
         print("Uyarı", "İşlem için geçerli veri alınamadı!")
         return

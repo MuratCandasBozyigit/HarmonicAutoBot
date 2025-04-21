@@ -1,1 +1,1 @@
-﻿from .monitor_ram import monitor_ram
+﻿from .monitor_ram import *
