@@ -35,6 +35,7 @@ def build_gui(root):  # <-- Fonksiyon adı da düzeltildi (builg değil, build)
     # Grafik alanı
     chart_frame = tk.Frame(root)
     chart_frame.pack(fill="both", expand=False)
+    globals.chart_frame = chart_frame
     globals.should_auto_refresh = tk.BooleanVar(value=True)
 
     # Kontrol paneli
