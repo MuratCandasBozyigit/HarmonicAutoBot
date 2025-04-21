@@ -12,6 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import İndicators
 import Utils
 import Utils.globals as globals
+import Cmd
 from datetime import datetime, timedelta,timezone
 
 
@@ -29,16 +30,7 @@ window.geometry("1280x560")
 
 should_auto_refresh = tk.BooleanVar(value=True)
 opened_patterns = set()  
-logs = []  
 
-
-
-
-
-
-
-def add_log(msg):
-    logs.append(msg)
 def detect_and_draw_recent_harmonics(df, ax):
     from matplotlib.lines import Line2D
     try:
@@ -72,7 +64,7 @@ def detect_and_draw_recent_harmonics(df, ax):
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
                 #ax.text(dX, dY, f"{detected}", color='maroon', fontsize=9, weight='400')
-                add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
+                Cmd.add_log(f"[Harmonic] {detected} pattern bulundu @ index {dX}")
 
                 if dX == len(df) - 7 and globals.emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
@@ -80,13 +72,13 @@ def detect_and_draw_recent_harmonics(df, ax):
                         if pattern_id not in opened_patterns:
                             open_position(dY, globals.symbol)
                             opened_patterns.add(pattern_id)
-                        add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
+                        Cmd.add_log(f"[Trade Açıldı] {detected} pattern @ fiyattan {dY}")
                     else:
-                        add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
+                        Cmd.add_log("[Emir Kontrol] Pattern bulundu ama emir modu kapalıydı.")
 
         gc.collect()
     except Exception as e:
-        add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
+        Cmd.add_log(f"[harmonic_draw] {type(e).__name__}: {e}")
 def show_chart(event=None):
    
     def clear_canvas():
