@@ -27,7 +27,7 @@ def build_gui(root):
     globals.exchange = exchange
 
     root.title("Harmonic Gözlem Paneli - v0.5")
-    root.geometry("960x720")
+    root.geometry("800x560")
 
     # Yeni bir üst çerçeve tanımla
     container_frame = tk.Frame(root)
