@@ -56,7 +56,7 @@ def execute_trade():
                 'stopPrice': take_profit_price,
                 'reduceOnly': True,
                 'workingType': 'MARK_PRICE'
-            }
+            } 
         )
 
         # SL emri

@@ -15,7 +15,6 @@ import Utils.globals as globals
 import Cmd
 from datetime import datetime, timedelta,timezone
 
-
 exchange = ccxt.binance({
     'apiKey':'991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3',
     'secret':'4a1bd0764cd29d8517f19b95a13650fe608dd95224b7adaf9cd387a0540ad5fb',
@@ -231,8 +230,6 @@ def execute_trade():
             amount=coin_amount
         )
 
-       
-
         entry_price = float(order['average']) if 'average' in order else market_price
         take_profit_price = round(entry_price * 1.005, 2)  # +0.5%
         stop_loss_price = round(entry_price * 0.99, 2)     # -1%
@@ -262,7 +259,6 @@ def execute_trade():
                 'workingType': 'MARK_PRICE'
             }
         )
-
 
         msg = f"[LONG] İşlem açıldı - {symbol}\nTP: {take_profit_price} | SL: {stop_loss_price}"
         print("Başarılı", f"{msg}\nOrder ID: {order['id']}")
@@ -333,9 +329,6 @@ def open_position(entry_price, symbol):
 
     except Exception as e:
         print(f"[open_position] {type(e).__name__}: {e}")
-    
-
-
 
 control_frame = tk.Frame(window)
 control_frame.pack(pady=10)
@@ -372,16 +365,12 @@ def toggle_emir():
     emir_acik = not globals.emir_acik
     emir_btn.config(text="🔴 Emir Arıyor..." if emir_acik else "🟢 Emir Aç!")
     log_emir_durumu()
-
 def log_emir_durumu():
     if globals.emir_acik:
         print("[Emir Kontrol] ✅ Emir aranıyor...")
     else:
         print("[Emir Kontrol] ⛔ Emir modu kapalı.")
-
-
 emir_btn = tk.Button(control_frame, text="🟢 Emir Aç", command=toggle_emir, bg="lightgreen")
 emir_btn.grid(row=0, column=7, padx=10)
-
 auto_refresh_chart()
 window.mainloop()
