@@ -1,11 +1,13 @@
-﻿import DrawPattern
+﻿# Chart.py
+import gc
+from datetime import datetime, timezone
 import Utils
+import DrawPattern
 import Utils.globals as globals
 import mplfinance as mpf
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from datetime import datetime, timezone
-import gc
-import DrawPattern
+
+
 def show_chart(event=None):
     gc.collect()
 
@@ -22,8 +24,7 @@ def show_chart(event=None):
         print("Uyarı: Veri alınamadı.")
         return
 
-    df = df.dropna()
-    df = df.iloc[-globals.limit_var.get():]
+    df = df.dropna().iloc[-globals.limit_var.get():]
     globals.df = df
     globals.symbol = symbol
     globals.timeframe = timeframe
@@ -42,9 +43,6 @@ def show_chart(event=None):
     )
     ax = axlist[0]
 
-    # Eğer harmonic çizim fonksiyonun varsa çağır:
-    # detect_and_draw_recent_harmonics(df, ax)
-
     canvas = FigureCanvasTkAgg(fig, master=globals.chart_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -52,6 +50,8 @@ def show_chart(event=None):
     globals.ax = ax
     globals.canvas = canvas
     globals.last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+
+
 def update_last_candle():
     if globals.df is None or globals.symbol is None:
         return
@@ -79,10 +79,12 @@ def update_last_candle():
         gc.collect()
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
+
+
 def auto_refresh_chart():
-    if not globals.should_auto_refresh.get()  :
-       globals.root.after(1000, auto_refresh_chart)
-       return
+    if not globals.should_auto_refresh.get():
+        globals.root.after(1000, auto_refresh_chart)
+        return
     try:
         now = datetime.now(timezone.utc)
         tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
@@ -96,5 +98,11 @@ def auto_refresh_chart():
     except Exception as e:
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
     globals.root.after(1000, auto_refresh_chart)
-def pause_refresh(event): globals.should_auto_refresh.set(False)
-def resume_refresh(event):  globals.should_auto_refresh.set(True)
+
+
+def pause_refresh(event):
+    globals.should_auto_refresh.set(False)
+
+
+def resume_refresh(event):
+    globals.should_auto_refresh.set(True)
