@@ -4,24 +4,25 @@ import Utils
 import os
 
 def open_position(entry_price, symbol_input=None):
-    if not globals.is_order_mode_enabled:
+    if not globals.emir_acik:
         print("Emir modu kapalı, işlem açılmadı.")
         return
     try:
+           # Binance bağlantısını oluştur
+        exchange = ccxt.binance({
+            'apiKey': globals.api_key,
+            'secret': globals.api_secret,
+            'enableRateLimit': True,
+            'options': {'defaultType': 'future'} 
+        })
+
+        exchange.set_sandbox_mode(globals.use_testnet)
+
         # Sembolü al ve formatla
         raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
         symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
         binance_symbol = symbol.replace("/", "")
         timeframe = globals.timeframe_var.get()
-
-        # Binance bağlantısını oluştur
-        exchange = ccxt.binance({
-            'apiKey': globals.api_key,
-            'secret': globals.api_secret,
-            'enableRateLimit': True,
-            'options': {'defaultType': 'future'}
-        })
-        exchange.set_sandbox_mode(globals.use_testnet)
 
         # İzole modu aktif et (eğer Utils içinde bu işlev varsa)
         Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)

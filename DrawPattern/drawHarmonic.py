@@ -41,12 +41,14 @@ def draw_bullish_patterns(df, ax):
 
                 Cmd.add_log(f"[Harmonic] BULLISH {detected} bulundu @ index {dX}")
 
-                if dX == len(df) - 2 and globals.is_order_mode_enabled:
+                if dX == len(df) - 10  and globals.emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if pattern_id not in opened_patterns:
                         Order.open_position(dY, globals.symbol)
                         opened_patterns.add(pattern_id)
                         Cmd.add_log(f"[Trade Açıldı] BULLISH {detected} @ {dY}")
+                    else:
+                        messagebox.showinfo("Uyarı", f"{detected} paterni zaten açılmış.")
         gc.collect()
 
     except Exception as e:
@@ -86,7 +88,7 @@ def draw_bearish_patterns(df, ax):
 
                 Cmd.add_log(f"[Harmonic] BEARISH {detected} bulundu @ index {dX}")
 
-                if dX == len(df) - 2 and globals.is_order_mode_enabled:
+                if dX == len(df) - 3 and globals.short_emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if pattern_id not in opened_patterns:
                         Order.open_position(dY, globals.symbol)

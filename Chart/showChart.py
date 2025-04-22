@@ -21,7 +21,7 @@ def show_chart(event=None):
 
     df = Utils.get_ohlcv(symbol, timeframe, limit=globals.limit_var.get())
     if df is None or df.empty:
-        print("Uyarı: Veri alınamadı.")
+        print("Uyarı: Veri alınamadı veya boş.")
         return
 
     df = df.dropna().iloc[-globals.limit_var.get():]
