@@ -4,7 +4,7 @@ import Utils
 import os
 
 def open_position(entry_price, symbol_input=None):
-    if not globals.is_order_mode_enabled:
+    if not globals.emir_acik:
         print("Emir modu kapalı, işlem açılmadı.")
         return
     try:
