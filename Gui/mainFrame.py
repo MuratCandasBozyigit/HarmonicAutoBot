@@ -61,7 +61,7 @@ def build_gui(root):
     symbol_entry.bind("<Return>", lambda e: [Chart.show_chart(), Chart.resume_refresh(e)])
 
     ctk.CTkLabel(control_frame, text="Zaman Dilimi:").grid(row=0, column=2, padx=5)
-    globals.timeframe_var = ctk.StringVar(value="1h")
+    globals.timeframe_var = ctk.StringVar(value="15m")
     timeframe_combo = ctk.CTkComboBox(control_frame, variable=globals.timeframe_var,
                                       values=["1m", "5m", "15m", "1h", "4h", "1d"])
     timeframe_combo.grid(row=0, column=3, padx=5)
