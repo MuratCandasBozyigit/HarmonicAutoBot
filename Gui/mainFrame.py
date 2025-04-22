@@ -81,7 +81,7 @@ def build_gui(root):
 
     ctk.CTkButton(control_frame, text="Anlık Long Aç", command=Order.execute_trade).grid(row=0, column=8, padx=5)
 
-    emir_btn = ctk.CTkButton(control_frame, text="🟢Long Emir Aç", fg_color="lightgreen")
+    emir_btn = ctk.CTkButton(control_frame, text="🟢Long Emir Aç", fg_color="darkgreen")
 
     def toggle_emir():
         globals.emir_acik = not globals.emir_acik
