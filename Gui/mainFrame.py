@@ -17,7 +17,7 @@ from Utils.save_settings import open_settings_window  # Ayarlar butonu için imp
 
 def toggle_theme():
     current = ctk.get_appearance_mode()
-    ctk.set_appearance_mode("dark" if current == "light" else "dark")
+    ctk.set_appearance_mode("dark" if current == "light" else "light")
 
 def build_gui(root):
     globals.root = root
@@ -43,7 +43,6 @@ def build_gui(root):
     chart_frame.grid(row=0, column=0, sticky="nsew")
     globals.chart_frame = chart_frame
 
-    # Otomatik yenileme kontrol değişkeni
     globals.should_auto_refresh = ctk.BooleanVar(value=True)
 
     control_frame = ctk.CTkFrame(container_frame)
@@ -52,7 +51,7 @@ def build_gui(root):
     container_frame.grid_rowconfigure(0, weight=1)
     container_frame.grid_columnconfigure(0, weight=1)
 
-    # SATIR 1: Coin, Zaman Dilimi, Bar Sayısı, Göster Butonu, Oto Yenileme
+    # SATIR 1
     ctk.CTkLabel(control_frame, text="Coin (BTC vs):").grid(row=0, column=0, padx=5, pady=2)
     globals.symbol_var = ctk.StringVar(value="BTC")
     symbol_entry = ctk.CTkEntry(control_frame, textvariable=globals.symbol_var, width=120)
@@ -78,27 +77,28 @@ def build_gui(root):
     refresh_switch = ctk.CTkSwitch(control_frame, text="🔄 Oto Yenileme", variable=globals.should_auto_refresh)
     refresh_switch.grid(row=0, column=7, padx=5)
 
-    # SATIR 2: Long Aç, Emir Modu, Ayarlar, Tema, vs
-    ctk.CTkButton(control_frame, text="Hızlı Long Aç", command=Order.execute_trade).grid(row=1, column=0, padx=5, pady=4)
+    # SATIR 2
+    ctk.CTkButton(control_frame, text="🚀 Hızlı Long Aç", command=Order.execute_trade).grid(row=1, column=0, padx=5, pady=4)
+    ctk.CTkButton(control_frame, text="🛑 Hızlı Short Aç", command=Order.execute_short_trade).grid(row=1, column=1, padx=5, pady=4)
 
-    emir_btn = ctk.CTkButton(control_frame, text="🟢Long Emir Ara", fg_color="darkgreen")
+    emir_btn = ctk.CTkButton(control_frame, text="🟢 Long Emir Ara", fg_color="darkgreen")
     def toggle_long_emir():
         globals.emir_acik = not globals.emir_acik
-        emir_btn.configure(text="🔴Long Emir Arıyor..." if globals.emir_acik else "🟢Long Emir Ara")
-        print("[Emir Kontrol]", "✅Long Emir aranıyor..." if globals.emir_acik else "❌Long Emir modu kapalı.")
+        emir_btn.configure(text="🔴 Long Emir Arıyor..." if globals.emir_acik else "🟢 Long Emir Ara")
+        print("[Emir Kontrol]", "✅ Long Emir aranıyor..." if globals.emir_acik else "❌ Long Emir modu kapalı.")
     emir_btn.configure(command=toggle_long_emir)
-    emir_btn.grid(row=1, column=1, padx=5)
+    emir_btn.grid(row=1, column=2, padx=5)
 
-    short_emir_btn = ctk.CTkButton(control_frame, text="🟢Short Emir Ara", fg_color="darkred")
+    short_emir_btn = ctk.CTkButton(control_frame, text="🟢 Short Emir Ara", fg_color="darkred")
     def toggle_short_emir():
         globals.short_emir_acik = not globals.short_emir_acik
-        short_emir_btn.configure(text="🔴Short Emir Arıyor..." if globals.short_emir_acik else "🟢Short Emir Ara")
-        print("[Emir Kontrol]", "✅Short Emir aranıyor..." if globals.short_emir_acik else "❌Short Emir modu kapalı.")
+        short_emir_btn.configure(text="🔴 Short Emir Arıyor..." if globals.short_emir_acik else "🟢 Short Emir Ara")
+        print("[Emir Kontrol]", "✅ Short Emir aranıyor..." if globals.short_emir_acik else "❌ Short Emir modu kapalı.")
     short_emir_btn.configure(command=toggle_short_emir)
-    short_emir_btn.grid(row=1, column=2, padx=5)
+    short_emir_btn.grid(row=1, column=3, padx=5)
 
-    ctk.CTkButton(control_frame, text="⚙️ Ayarlar", command=lambda: open_settings_window(root)).grid(row=1, column=3, padx=5)
-    ctk.CTkButton(control_frame, text="☀/☾ Tema Değiştir", command=toggle_theme).grid(row=1, column=4, padx=5)
+    ctk.CTkButton(control_frame, text="⚙️ Ayarlar", command=lambda: open_settings_window(root)).grid(row=1, column=4, padx=5)
+    ctk.CTkButton(control_frame, text="☀/☾ Tema Değiştir", command=toggle_theme).grid(row=1, column=5, padx=5)
 
     # Grafik otomatik yenileme fonksiyonu başlat
     Chart.auto_refresh_chart()
