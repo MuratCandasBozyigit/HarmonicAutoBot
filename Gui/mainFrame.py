@@ -1,4 +1,5 @@
 ﻿# mainFrame.py
+
 import ccxt
 import pandas as pd
 import mplfinance as mpf
@@ -7,16 +8,19 @@ from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from datetime import datetime
 
+# Dahili modüller
 import İndicators
 import Utils
 import Utils.globals as globals
 import Cmd
 import Order
 import Chart
+from Utils.save_settings import open_settings_window  # Ayarlar butonu için import
 
 def build_gui(root):
     globals.root = root
 
+    # Binance bağlantısı kuruluyor
     exchange = ccxt.binance({
         'apiKey': globals.api_key,
         'secret': globals.api_secret,
@@ -26,29 +30,32 @@ def build_gui(root):
     exchange.set_sandbox_mode(globals.use_testnet)
     globals.exchange = exchange
 
+    # Ana pencere başlığı ve boyutu
     root.title("Harmonic Gözlem Paneli - v0.5")
     root.geometry("1280x720")
 
-    # Yeni bir üst çerçeve tanımla
+    # Üst konteyner çerçevesi
     container_frame = tk.Frame(root)
     container_frame.pack(fill="both", expand=True)
 
-    # Grafik alanı (üstte olacak)
+    # Grafik çerçevesi
     chart_frame = tk.Frame(container_frame, bg="black")
-    chart_frame.grid(row=0, column=0, sticky="nsew")  # Üst
+    chart_frame.grid(row=0, column=0, sticky="nsew")
     globals.chart_frame = chart_frame
+
+    # Otomatik yenileme için kontrol değişkeni
     globals.should_auto_refresh = tk.BooleanVar(value=True)
 
-    # Kontrol paneli (altta olacak)
+    # Kontrol paneli (grafiğin altı)
     control_frame = tk.Frame(container_frame)
     control_frame.grid(row=1, column=0, pady=5)
 
-    # Satır/kolon oranları
-    container_frame.grid_rowconfigure(0, weight=1)   # grafik alanı genişleyebilir
-    container_frame.grid_rowconfigure(1, weight=0)   # kontrol sabit
+    # Grid yapılandırması
+    container_frame.grid_rowconfigure(0, weight=1)
+    container_frame.grid_rowconfigure(1, weight=0)
     container_frame.grid_columnconfigure(0, weight=1)
 
-    # Kontrol bileşenleri (aynı şekilde kalabilir)
+    # Kontrol bileşenleri
     globals.limit_var = tk.IntVar(value=100)
     tk.Label(control_frame, text="Bar Sayısı:").grid(row=0, column=5, padx=5)
     tk.Spinbox(control_frame, from_=50, to=1000, increment=50,
@@ -70,11 +77,14 @@ def build_gui(root):
     timeframe_combo.grid(row=0, column=3, padx=5)
     timeframe_combo.current(3)
 
+    # Veriyi göster butonu
     tk.Button(control_frame, text="Veriyi Göster",
               command=lambda: [Chart.show_chart(), Chart.resume_refresh(None)]).grid(row=0, column=4, padx=5)
 
+    # Anlık Long açma butonu
     tk.Button(control_frame, text="Anlık Long Aç", command=Order.execute_trade).grid(row=0, column=8, padx=5)
 
+    # Otomatik emir modu butonu
     emir_btn = tk.Button(control_frame, text="🟢Long Emir Aç", bg="lightgreen")
 
     def toggle_emir():
@@ -85,5 +95,8 @@ def build_gui(root):
     emir_btn.config(command=toggle_emir)
     emir_btn.grid(row=0, column=7, padx=10)
 
-    # Otomatik grafik güncellemesi başlat
+    # Ayarlar penceresi açma butonu
+    tk.Button(control_frame, text="⚙️ Ayarlar", command=lambda: open_settings_window(root)).grid(row=0, column=9, padx=5)
+
+    # Otomatik grafik güncelleme başlat
     Chart.auto_refresh_chart()
