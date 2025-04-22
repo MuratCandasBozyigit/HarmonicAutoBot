@@ -39,7 +39,7 @@ def build_gui(root):
     container_frame = ctk.CTkFrame(root)
     container_frame.pack(fill="both", expand=True)
 
-    chart_frame = ctk.CTkFrame(container_frame, fg_color="black")
+    chart_frame = ctk.CTkFrame(container_frame, fg_color="gray")
     chart_frame.grid(row=0, column=0, sticky="nsew")
     globals.chart_frame = chart_frame
 
