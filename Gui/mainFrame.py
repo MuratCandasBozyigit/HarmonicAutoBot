@@ -22,7 +22,7 @@ def toggle_theme():
 def build_gui(root):
     globals.root = root
     ctk.set_default_color_theme("blue")
-    ctk.set_appearance_mode("dark")
+    ctk.set_appearance_mode("light")
 
     exchange = ccxt.binance({
         'apiKey': globals.api_key,
