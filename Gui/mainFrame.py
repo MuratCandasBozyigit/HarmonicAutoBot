@@ -17,7 +17,7 @@ from Utils.save_settings import open_settings_window  # Ayarlar butonu için imp
 
 def toggle_theme():
     current = ctk.get_appearance_mode()
-    ctk.set_appearance_mode("dark" if current == "light" else "light")
+    ctk.set_appearance_mode("light" if current == "dark" else "dark")
 
 def build_gui(root):
     globals.root = root
