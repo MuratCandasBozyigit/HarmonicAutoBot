@@ -25,8 +25,8 @@ ax = None
 symbol = None
 timeframe = None
 
-tp_percent = 0.5    # Take-profit yüzdesi (örneğin %0.5)
-sl_percent = 0.3    # Stop-loss yüzdesi (örneğin %0.3)
+tp_percent = 0.7   # Take-profit yüzdesi (örneğin %0.5)
+sl_percent = 1.5    # Stop-loss yüzdesi (örneğin %0.3)
 
 
 # API / Binance Ayarları
