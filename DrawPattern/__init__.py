@@ -1,1 +1,1 @@
-﻿from .drawHarmonic import detect_and_draw_recent_harmonics
+﻿from .drawHarmonic import draw_bullish_patterns, draw_bearish_patterns

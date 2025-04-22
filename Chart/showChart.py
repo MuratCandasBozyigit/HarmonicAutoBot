@@ -74,7 +74,8 @@ def update_last_candle():
             volume=False,
             returnfig=False
         )
-        DrawPattern.detect_and_draw_recent_harmonics(globals.df, globals.ax)
+        DrawPattern.draw_bullish_patterns(globals.df, globals.ax)
+        DrawPattern.draw_bearish_patterns(globals.df, globals.ax)
         globals.canvas.draw_idle()
         gc.collect()
     except Exception as e:
