@@ -1,5 +1,5 @@
 ﻿import tkinter as tk
-import İndicators
+import Indicators
 import Utils
 import Utils.globals as globals
 import Cmd

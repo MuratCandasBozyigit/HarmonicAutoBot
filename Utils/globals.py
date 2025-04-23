@@ -11,6 +11,8 @@ limit_var = None
 symbol_var = None
 timeframe_var = None
 should_auto_refresh = None  # <-- Burayı None bırak
+refresh_job = None
+_drag_data = {'x': 0, 'y': 0}
 
 # Diğer değişkenler
 emir_acik = False

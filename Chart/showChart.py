@@ -7,9 +7,14 @@ import Utils.globals as globals
 import mplfinance as mpf
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-
 def show_chart(event=None):
     gc.collect()
+
+    # ✅ Refresh'i durdur (önceki after görevlerini iptal için)
+    globals.should_auto_refresh.set(False)
+    if globals.refresh_job:
+        globals.root.after_cancel(globals.refresh_job)
+        globals.refresh_job = None
 
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
@@ -52,7 +57,6 @@ def show_chart(event=None):
     globals.canvas = canvas
     globals.last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
 
-    # 🔍 Zoom eventleri
     def on_scroll(event):
         try:
             x_min, x_max = ax.get_xlim()
@@ -60,21 +64,19 @@ def show_chart(event=None):
             x_range = x_max - x_min
             y_range = y_max - y_min
 
-            if event.state & 0x0001:  # Shift: Yatay zoom
+            if event.state & 0x0001:  # Shift
                 zoom_factor = 0.05 * x_range
                 if event.delta > 0:
                     ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
                 else:
                     ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
-
-            elif event.state & 0x0008:  # Alt: Dikey zoom
+            elif event.state & 0x0008:  # Alt
                 zoom_factor = 0.1 * y_range
                 if event.delta > 0:
                     ax.set_ylim(y_min + zoom_factor, y_max - zoom_factor)
                 else:
                     ax.set_ylim(y_min - zoom_factor, y_max + zoom_factor)
-
-            elif event.state & 0x0004:  # Ctrl: Alternatif yatay zoom
+            elif event.state & 0x0004:  # Ctrl
                 zoom_factor = 0.1 * x_range
                 if event.delta > 0:
                     ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
@@ -85,8 +87,37 @@ def show_chart(event=None):
         except Exception as e:
             print(f"[on_scroll] {type(e).__name__}: {e}")
 
-    widget.bind("<MouseWheel>", on_scroll)
+    def on_press(event):
+        globals._drag_data = {'x': event.x, 'y': event.y}
 
+    def on_drag(event):
+        try:
+            dx = event.x - globals._drag_data['x']
+            dy = event.y - globals._drag_data['y']
+
+            x_min, x_max = ax.get_xlim()
+            y_min, y_max = ax.get_ylim()
+
+            x_shift = dx / 1500 * (x_max - x_min)  # Daha kontrollü hareket için artırıldı
+            y_shift = dy / 1500 * (y_max - y_min)
+
+            ax.set_xlim(x_min - x_shift, x_max - x_shift)
+            ax.set_ylim(y_min + y_shift, y_max + y_shift)
+
+            globals._drag_data['x'] = event.x
+            globals._drag_data['y'] = event.y
+
+            canvas.draw_idle()
+        except Exception as e:
+            print(f"[on_drag] {type(e).__name__}: {e}")
+
+    widget.bind("<MouseWheel>", on_scroll)
+    widget.bind("<Button-1>", on_press)
+    widget.bind("<B1-Motion>", on_drag)
+
+    # ✅ Auto refresh tekrar başlat
+    globals.should_auto_refresh.set(True)
+    globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
 
 def update_last_candle():
     if globals.df is None or globals.symbol is None:
@@ -117,10 +148,9 @@ def update_last_candle():
     except Exception as e:
         print(f"[update_last_candle] {type(e).__name__}: {e}")
 
-
 def auto_refresh_chart():
     if not globals.should_auto_refresh.get():
-        globals.root.after(1000, auto_refresh_chart)
+        globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
         return
     try:
         now = datetime.now(timezone.utc)
@@ -134,12 +164,10 @@ def auto_refresh_chart():
             update_last_candle()
     except Exception as e:
         print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
-    globals.root.after(1000, auto_refresh_chart)
-
+    globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
 
 def pause_refresh(event):
     globals.should_auto_refresh.set(False)
-
 
 def resume_refresh(event):
     globals.should_auto_refresh.set(True)

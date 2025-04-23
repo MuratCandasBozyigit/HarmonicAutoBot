@@ -7,7 +7,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from datetime import datetime
 
 # Dahili modüller
-import İndicators
+import Indicators
 import Utils
 import Utils.globals as globals
 import Cmd
