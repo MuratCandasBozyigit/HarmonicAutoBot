@@ -8,7 +8,7 @@ load_dotenv()
 def open_settings_window(root):
     win = ctk.CTkToplevel(root)
     win.title("Ayarlar")
-    win.geometry("380x500")
+    win.geometry("380x650")
     win.resizable(False, False)
 
     # Başlık
