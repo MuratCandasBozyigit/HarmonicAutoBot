@@ -19,12 +19,10 @@ def execute_short_trade():
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)
     except Exception as e:
-        print(f"Kaldıraç ayarlanamadı: {e}")
         return
 
     df = Utils.get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
-        print("Uyarı", "İşlem için geçerli veri alınamadı!")
         return
 
     market_price = df['close'].iloc[-1]
@@ -62,6 +60,5 @@ def execute_short_trade():
             params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
-        print(f"[SHORT] {symbol} işlemi açıldı. Giriş: {entry_price}, TP: {tp}, SL: {sl}")
-    except Exception as e:
-        print(f"[HATA] {e}")
+    except Exception:   
+        pass

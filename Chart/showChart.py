@@ -16,12 +16,10 @@ def show_chart(event=None):
     timeframe = globals.timeframe_var.get()
 
     if not symbol or not timeframe:
-        print("Uyarı: Coin ve zaman dilimi girilmedi.")
         return
 
     df = Utils.get_ohlcv(symbol, timeframe, limit=globals.limit_var.get())
     if df is None or df.empty:
-        print("Uyarı: Veri alınamadı.")
         return
 
     df = df.dropna().iloc[-globals.limit_var.get():]
@@ -78,8 +76,8 @@ def update_last_candle():
         DrawPattern.draw_bearish_patterns(globals.df, globals.ax)
         globals.canvas.draw_idle()
         gc.collect()
-    except Exception as e:
-        print(f"[update_last_candle] {type(e).__name__}: {e}")
+    except Exception :
+        pass
 
 
 def auto_refresh_chart():
@@ -92,12 +90,12 @@ def auto_refresh_chart():
         tf_seconds = tf_map.get(globals.timeframe, 60)
 
         if globals.last_candle_time and (now - globals.last_candle_time).total_seconds() >= tf_seconds:
-            print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
+           
             show_chart()
         else:
             update_last_candle()
-    except Exception as e:
-        print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
+    except Exception :
+        pass
     globals.root.after(1000, auto_refresh_chart)
 
 

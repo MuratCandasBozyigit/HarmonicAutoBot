@@ -27,7 +27,6 @@ def open_short_position(entry_price=None, symbol_input=None):
         # OHLCV verisini al
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
-            print("Uyarı", "İşlem için geçerli veri alınamadı!")
             return
 
         # Parametreleri al
@@ -79,6 +78,5 @@ def open_short_position(entry_price=None, symbol_input=None):
             }
         )
 
-        print(f"[SHORT] {symbol} işlemi açıldı. TP: {take_profit_price}, SL: {stop_loss_price}")
-    except Exception as e:
-        print(f"[open_short_position] {type(e).__name__}: {e}")
+    except Exception :
+        pass

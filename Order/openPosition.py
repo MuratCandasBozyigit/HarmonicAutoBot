@@ -5,7 +5,6 @@ import os
 
 def open_position(entry_price, symbol_input=None):
     if not globals.emir_acik:
-        print("Emir modu kapalı, işlem açılmadı.")
         return
     try:
         # Sembolü al ve formatla
@@ -29,7 +28,6 @@ def open_position(entry_price, symbol_input=None):
         # OHLCV verisini al
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
-            print("Uyarı", "İşlem için geçerli veri alınamadı!")
             return
 
         # Parametreleri al
@@ -81,6 +79,5 @@ def open_position(entry_price, symbol_input=None):
             }
         )
 
-        print(f"[LONG] {symbol} işlemi açıldı. TP: {take_profit_price}, SL: {stop_loss_price}")
-    except Exception as e:
-        print(f"[open_position] {type(e).__name__}: {e}")
+    except Exception :
+        pass
