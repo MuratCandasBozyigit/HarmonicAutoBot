@@ -98,7 +98,6 @@ def build_gui(root):
     short_emir_btn.grid(row=1, column=3, padx=5)
 
     ctk.CTkButton(control_frame, text="⚙️ Ayarlar", command=lambda: open_settings_window(root)).grid(row=1, column=4, padx=5)
-    ctk.CTkButton(control_frame, text="☀/☾ Tema Değiştir", command=toggle_theme).grid(row=1, column=5, padx=5)
 
     # Grafik otomatik yenileme fonksiyonu başlat
     Chart.auto_refresh_chart()
