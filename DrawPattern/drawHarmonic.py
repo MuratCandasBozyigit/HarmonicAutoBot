@@ -89,7 +89,7 @@ def draw_bearish_patterns(df, ax):
                 if dX == len(df) - 3 and globals.short_emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if pattern_id not in opened_patterns:
-                        Order.open_position(dY, globals.symbol)
+                        Order.open_short_position(dY, globals.symbol)
                         opened_patterns.add(pattern_id)
                         Cmd.add_log(f"[Trade Açıldı] BEARISH {detected} @ {dY}")
         gc.collect()

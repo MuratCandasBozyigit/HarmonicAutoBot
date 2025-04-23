@@ -14,7 +14,7 @@ should_auto_refresh = None  # <-- Burayı None bırak
 
 # Diğer değişkenler
 emir_acik = False
-short_emir_acik=False
+short_emir_acik=True
 aktif_emir_id = None
 last_candle_time = None
 df = None

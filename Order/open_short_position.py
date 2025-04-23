@@ -4,9 +4,7 @@ import Utils
 import os
 
 def open_short_position(entry_price=None, symbol_input=None):
-    if not globals.short_emir_acik:
-        print("Emir modu kapalı, işlem açılmadı.")
-        return
+ 
     try:
         # Sembolü al ve formatla
         raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
@@ -23,7 +21,7 @@ def open_short_position(entry_price=None, symbol_input=None):
         })
         exchange.set_sandbox_mode(globals.use_testnet)
 
-        # İzole modu aktif et
+        # İzole modu aktif et (eğer varsa)
         Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
 
         # OHLCV verisini al
@@ -50,12 +48,12 @@ def open_short_position(entry_price=None, symbol_input=None):
             amount=coin_amount
         )
 
-        # Giriş fiyatı, TP ve SL hesapla
+        # Giriş fiyatı, TP ve SL hesapla (short için tersi)
         entry_price = float(order['average']) if 'average' in order else market_price
-        take_profit_price = round(entry_price * (1 - globals.tp_percent / 100), 2)
-        stop_loss_price = round(entry_price * (1 + globals.sl_percent / 100), 2)
+        take_profit_price = round(entry_price * (1 - globals.tp_percent / 100), 2)  # TP düşer
+        stop_loss_price = round(entry_price * (1 + globals.sl_percent / 100), 2)     # SL yükselir
 
-        # TP emri (buy ile kapatılır)
+        # TP emri
         exchange.create_order(
             symbol=symbol,
             type='take_profit_market',
@@ -68,7 +66,7 @@ def open_short_position(entry_price=None, symbol_input=None):
             }
         )
 
-        # SL emri (buy ile kapatılır)
+        # SL emri
         exchange.create_order(
             symbol=symbol,
             type='stop_market',
