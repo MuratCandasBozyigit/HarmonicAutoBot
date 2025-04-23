@@ -2,7 +2,6 @@
 import İndicators
 import Utils
 import Utils.globals as globals
-import Cmd
 import Order
 import Chart
 import Gui

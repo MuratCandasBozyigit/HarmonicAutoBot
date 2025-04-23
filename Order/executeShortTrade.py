@@ -18,50 +18,49 @@ def execute_short_trade():
 
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)
-    except Exception as e:
-        print(f"Kaldıraç ayarlanamadı: {e}")
-        return
+    except Exception:
+        return  # Kaldıraç ayarlanamazsa sessizce çık
 
     df = Utils.get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
-        print("Uyarı", "İşlem için geçerli veri alınamadı!")
-        return
+        return  # Veri yoksa işlem başlatma
 
     market_price = df['close'].iloc[-1]
     coin_amount = round((globals.usdt_amount * globals.leverage) / market_price, 3)
 
     try:
-        # SHORT: Sell order
         order = exchange.create_market_order(
             symbol=symbol,
             side='sell',
             amount=coin_amount
         )
 
-        entry_price = float(order['average']) if 'average' in order else market_price
-
-        # SHORT: TP daha düşük, SL daha yüksek
+        entry_price = float(order.get('average', market_price))
         tp = round(entry_price * (1 - globals.tp_percent / 100), 2)
         sl = round(entry_price * (1 + globals.sl_percent / 100), 2)
 
-        # TP: Buy (pozisyonu kapatmak için)
         exchange.create_order(
             symbol=symbol,
             type='take_profit_market',
             side='buy',
             amount=coin_amount,
-            params={'stopPrice': tp, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'stopPrice': tp,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
 
-        # SL: Buy (pozisyonu kapatmak için)
         exchange.create_order(
             symbol=symbol,
             type='stop_market',
             side='buy',
             amount=coin_amount,
-            params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'stopPrice': sl,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
-
-        print(f"[SHORT] {symbol} işlemi açıldı. Giriş: {entry_price}, TP: {tp}, SL: {sl}")
-    except Exception as e:
-        print(f"[HATA] {e}")
+    except Exception:
+        pass  # Hataları sessizce geç

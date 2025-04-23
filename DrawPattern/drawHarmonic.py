@@ -1,5 +1,4 @@
 ﻿import İndicators
-import Cmd
 import Order
 import Utils.globals as globals
 import gc
@@ -39,19 +38,16 @@ def draw_bullish_patterns(df, ax):
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
 
-                Cmd.add_log(f"[Harmonic] BULLISH {detected} bulundu @ index {dX}")
 
                 if dX == len(df) - 2 and globals.emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if pattern_id not in opened_patterns:
                         Order.open_position(dY, globals.symbol)
                         opened_patterns.add(pattern_id)
-                        Cmd.add_log(f"[Trade Açıldı] BULLISH {detected} @ {dY}")
         gc.collect()
 
-    except Exception as e:
-        Cmd.add_log(f"[bullish_draw] {type(e).__name__}: {e}")
-
+    except Exception:
+        pass
 
 def draw_bearish_patterns(df, ax):
     try:
@@ -84,15 +80,13 @@ def draw_bearish_patterns(df, ax):
                 for label, (px, py) in zip("XABCD", points):
                     ax.text(px, py, label, color='black', fontsize=8, weight='bold')
 
-                Cmd.add_log(f"[Harmonic] BEARISH {detected} bulundu @ index {dX}")
 
                 if dX == len(df) - 3 and globals.short_emir_acik:
                     pattern_id = hash((round(xY, 2), round(aY, 2), round(bY, 2), round(cY, 2), round(dY, 2)))
                     if pattern_id not in opened_patterns:
                         Order.open_short_position(dY, globals.symbol)
                         opened_patterns.add(pattern_id)
-                        Cmd.add_log(f"[Trade Açıldı] BEARISH {detected} @ {dY}")
         gc.collect()
 
-    except Exception as e:
-        Cmd.add_log(f"[bearish_draw] {type(e).__name__}: {e}")
+    except Exception:
+        pass

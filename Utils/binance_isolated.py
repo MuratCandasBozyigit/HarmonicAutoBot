@@ -20,4 +20,3 @@ def set_isolated_mode(api_key, api_secret, symbol):
     url = f"{base_url}{endpoint}?{params}&signature={signature}"
     response = requests.post(url, headers=headers)
 
-    print("İzolasyon modu sonucu:", response.status_code, response.text)

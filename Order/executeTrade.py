@@ -20,9 +20,7 @@ def execute_trade():
     # Kaldıraç ve veri çekme
     exchange.set_leverage(globals.leverage, symbol=symbol)
     df = Utils.get_ohlcv(symbol, timeframe)
-    if df is None or df.empty:
-        print("Uyarı", "İşlem için geçerli veri alınamadı!")
-        return
+  
 
     # İşlem miktarı ve emir
     market_price = df['close'].iloc[-1]
@@ -55,6 +53,5 @@ def execute_trade():
             params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
-        print(f"[LONG] {symbol} işlemi açıldı. TP: {tp}, SL: {sl}")
-    except Exception as e:
-        print(f"[HATA] {e}")
+    except Exception :
+        pass
