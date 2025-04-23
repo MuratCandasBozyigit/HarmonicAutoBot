@@ -17,7 +17,7 @@ def open_settings_window(root):
     # Tema Seçimi
     ctk.CTkLabel(win, text="Tema Seçimi:", anchor="w").pack(fill="x", padx=20, pady=(10, 5))
     theme_var = ctk.StringVar(value=ctk.get_appearance_mode().capitalize())
-    theme_selector = ctk.CTkOptionMenu(win, values=["Light", "Dark", "System"], variable=theme_var)
+    theme_selector = ctk.CTkOptionMenu(win, values=["Light", "Dark"], variable=theme_var)
     theme_selector.pack(padx=20, fill="x")
 
     def apply_theme():
