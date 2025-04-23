@@ -45,11 +45,47 @@ def show_chart(event=None):
 
     canvas = FigureCanvasTkAgg(fig, master=globals.chart_frame)
     canvas.draw()
-    canvas.get_tk_widget().pack(fill="both", expand=True)
+    widget = canvas.get_tk_widget()
+    widget.pack(fill="both", expand=True)
 
     globals.ax = ax
     globals.canvas = canvas
     globals.last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
+
+    # 🔍 Zoom eventleri
+    def on_scroll(event):
+        try:
+            x_min, x_max = ax.get_xlim()
+            y_min, y_max = ax.get_ylim()
+            x_range = x_max - x_min
+            y_range = y_max - y_min
+
+            if event.state & 0x0001:  # Shift: Yatay zoom
+                zoom_factor = 0.05 * x_range
+                if event.delta > 0:
+                    ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
+                else:
+                    ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
+
+            elif event.state & 0x0008:  # Alt: Dikey zoom
+                zoom_factor = 0.1 * y_range
+                if event.delta > 0:
+                    ax.set_ylim(y_min + zoom_factor, y_max - zoom_factor)
+                else:
+                    ax.set_ylim(y_min - zoom_factor, y_max + zoom_factor)
+
+            elif event.state & 0x0004:  # Ctrl: Alternatif yatay zoom
+                zoom_factor = 0.1 * x_range
+                if event.delta > 0:
+                    ax.set_xlim(x_min + zoom_factor, x_max - zoom_factor)
+                else:
+                    ax.set_xlim(x_min - zoom_factor, x_max + zoom_factor)
+
+            canvas.draw_idle()
+        except Exception as e:
+            print(f"[on_scroll] {type(e).__name__}: {e}")
+
+    widget.bind("<MouseWheel>", on_scroll)
 
 
 def update_last_candle():
