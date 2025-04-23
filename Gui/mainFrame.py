@@ -33,7 +33,7 @@ def build_gui(root):
     exchange.set_sandbox_mode(globals.use_testnet)
     globals.exchange = exchange
 
-    root.title("Kara Şimşek")
+    root.title("Auto Trade Murtaza")
     root.geometry("1280x720")
 
     container_frame = ctk.CTkFrame(root)
