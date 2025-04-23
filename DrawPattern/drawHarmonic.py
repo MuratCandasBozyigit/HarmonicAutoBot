@@ -1,4 +1,4 @@
-﻿import İndicators
+﻿import Indicators
 import Cmd
 import Order
 import Utils.globals as globals
@@ -23,7 +23,7 @@ def draw_bullish_patterns(df, ax):
             xX, aX, bX, cX, dX = i-4, i-3, i-2, i-1, i
             xY, aY, bY, cY, dY = x, a, b, c, d
 
-            result = İndicators.harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
+            result = Indicators.harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
             is_valid, gart, bat, bfly, crab, shark, cyph = result
 
             if is_valid:
@@ -68,7 +68,7 @@ def draw_bearish_patterns(df, ax):
             xX, aX, bX, cX, dX = i-4, i-3, i-2, i-1, i
             xY, aY, bY, cY, dY = x, a, b, c, d
 
-            result = İndicators.harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
+            result = Indicators.harmonic_xabcd_validate(xX, xY, aX, aY, bX, bY, cX, cY, dX, dY)
             is_valid, gart, bat, bfly, crab, shark, cyph = result
 
             if is_valid:
