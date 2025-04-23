@@ -40,7 +40,9 @@ def show_chart(event=None):
         returnfig=True
     )
     ax = axlist[0]
-
+    if not hasattr(globals, "harmonic_timer_started"):
+        DrawPattern.clear_harmonics_periodically(ax)
+    globals.harmonic_timer_started = True
     canvas = FigureCanvasTkAgg(fig, master=globals.chart_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)

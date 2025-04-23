@@ -8,8 +8,8 @@ load_dotenv()
 def open_settings_window(root):
     win = ctk.CTkToplevel(root)
     win.title("Ayarlar")
-    win.geometry("380x500")
-    win.resizable(False, False)
+    win.geometry("650")
+    win.resizable(False, True)
 
     # Başlık
     ctk.CTkLabel(win, text="Genel Ayarlar", font=("Arial", 18, "bold")).pack(pady=10)
