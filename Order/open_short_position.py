@@ -1,10 +1,4 @@
-﻿import ccxt
-from Utils import globals 
-import Utils
-import os
-
-def open_short_position(entry_price=None, symbol_input=None):
- 
+﻿def open_short_position(entry_price=None, symbol_input=None):
     try:
         # Sembolü al ve formatla
         raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
@@ -19,9 +13,12 @@ def open_short_position(entry_price=None, symbol_input=None):
             'enableRateLimit': True,
             'options': {'defaultType': 'future'}
         })
-        exchange.set_sandbox_mode(globals.use_testnet)
 
-        # İzole modu aktif et (eğer varsa)
+        # Sandbox Modu için testnet kullanımını kontrol et
+        if globals.use_testnet:
+            exchange.set_sandbox_mode(True)  # Testnet için sandbox aktif et
+
+        # İzole modu aktif et (Utils içinde bu işlev varsa)
         Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
 
         # OHLCV verisini al
@@ -78,5 +75,5 @@ def open_short_position(entry_price=None, symbol_input=None):
             }
         )
 
-    except Exception :
-        pass
+    except Exception as e:
+        print(f"Error: {str(e)}")

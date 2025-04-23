@@ -1,8 +1,4 @@
-﻿import ccxt
-from Utils import globals
-import Utils
-
-def execute_short_trade():
+﻿def execute_short_trade():
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
@@ -14,11 +10,14 @@ def execute_short_trade():
         'enableRateLimit': True,
         'options': {'defaultType': 'future'}
     })
-    exchange.set_sandbox_mode(globals.use_testnet)
+
+    if globals.use_testnet:
+        exchange.set_sandbox_mode(True)  # Testnet için sandbox aktif et
 
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)
     except Exception as e:
+        print(f"Kaldıraç ayarlanırken hata: {str(e)}")
         return
 
     df = Utils.get_ohlcv(symbol, timeframe)
@@ -60,5 +59,5 @@ def execute_short_trade():
             params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
-    except Exception:   
-        pass
+    except Exception as e:
+        print(f"Error: {str(e)}")

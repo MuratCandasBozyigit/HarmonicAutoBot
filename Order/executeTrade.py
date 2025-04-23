@@ -1,7 +1,4 @@
-﻿import ccxt
-from Utils import globals
-import Utils
-def execute_trade():
+﻿def execute_trade():
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
 
@@ -15,10 +12,18 @@ def execute_trade():
         'enableRateLimit': True,
         'options': {'defaultType': 'future'}
     })
-    exchange.set_sandbox_mode(globals.use_testnet)
+
+    # Testnet kullanımı
+    if globals.use_testnet:
+        exchange.set_sandbox_mode(True)  # Testnet için sandbox aktif et
 
     # Kaldıraç ve veri çekme
-    exchange.set_leverage(globals.leverage, symbol=symbol)
+    try:
+        exchange.set_leverage(globals.leverage, symbol=symbol)
+    except Exception as e:
+        print(f"Kaldıraç ayarlanırken hata: {str(e)}")
+        return
+
     df = Utils.get_ohlcv(symbol, timeframe)
     if df is None or df.empty:
         return
@@ -54,5 +59,5 @@ def execute_trade():
             params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
-    except Exception :
-        pass
+    except Exception as e:
+        print(f"Error: {str(e)}")

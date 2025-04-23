@@ -3,9 +3,10 @@ from Utils import globals
 import Utils
 import os
 
-def open_position(entry_price, symbol_input=None):
+def open_position(symbol_input=None):
     if not globals.emir_acik:
         return
+
     try:
         # Sembolü al ve formatla
         raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
@@ -28,6 +29,7 @@ def open_position(entry_price, symbol_input=None):
         # OHLCV verisini al
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
+            print("Veri alınamadı veya boş veri geldi!")
             return
 
         # Parametreleri al
@@ -54,7 +56,7 @@ def open_position(entry_price, symbol_input=None):
         stop_loss_price = round(entry_price * (1 - globals.sl_percent / 100), 2)
 
         # TP emri
-        exchange.create_order(
+        take_profit_order = exchange.create_order(
             symbol=symbol,
             type='take_profit_market',
             side='sell',
@@ -67,7 +69,7 @@ def open_position(entry_price, symbol_input=None):
         )
 
         # SL emri
-        exchange.create_order(
+        stop_loss_order = exchange.create_order(
             symbol=symbol,
             type='stop_market',
             side='sell',
@@ -79,5 +81,12 @@ def open_position(entry_price, symbol_input=None):
             }
         )
 
-    except Exception :
-        pass
+        # Başarıyla işlem yapıldığını bildir
+        print(f"Pozisyon açıldı: {symbol} - Giriş Fiyatı: {entry_price}, TP: {take_profit_price}, SL: {stop_loss_price}")
+
+    except ccxt.NetworkError as e:
+        print(f"Ağ hatası oluştu: {str(e)}")
+    except ccxt.ExchangeError as e:
+        print(f"Borsa hatası oluştu: {str(e)}")
+    except Exception as e:
+        print(f"Beklenmeyen bir hata oluştu: {str(e)}")
