@@ -3,7 +3,8 @@ from Utils import globals
 import Utils
 import os
 import tkinter as tk 
-import tkinter.messagebox as msgbox
+import customtkinter as ctk
+from tkinter import messagebox as msgbox
 
 def open_short_position(entry_price=None, symbol_input=None):
     try:
@@ -68,18 +69,20 @@ def open_short_position(entry_price=None, symbol_input=None):
             }
         )
 
-        root = tk.Tk()
+      
+        
+        
+        root = ctk.CTk()
         root.withdraw()
 
         msgbox.showinfo("Short Pozisyon Açıldı", f"""
-{symbol} short işlemi açıldı ✅
-Giriş Fiyatı: {entry_price}
-TP: {take_profit_price}
-SL: {stop_loss_price}
-""")
+        {symbol} short işlemi açıldı ✅
+        Giriş Fiyatı: {entry_price}
+        TP: {take_profit_price}
+        SL: {stop_loss_price}
+        """)
 
-        
-        root.destroy() 
+        root.destroy()
 
     except ccxt.BaseError :
         pass

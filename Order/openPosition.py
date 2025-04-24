@@ -2,7 +2,8 @@
 from Utils import globals
 import Utils
 import tkinter as tk
-import tkinter.messagebox as msgbox
+import customtkinter as ctk
+from tkinter import messagebox as msgbox
 
 def open_position(entry_price, symbol_input=None):
     if not globals.emir_acik:
@@ -69,17 +70,18 @@ def open_position(entry_price, symbol_input=None):
             }
         )
 
-        root = tk.Tk()
+        root = ctk.CTk()
         root.withdraw()
 
-        msgbox.showinfo("Long Pozisyon Açıldı", f"""
-{symbol} long işlemi açıldı ✅
-Giriş Fiyatı: {entry_price}
-TP: {take_profit_price}
-SL: {stop_loss_price}
-""")
+        msgbox.showinfo("Short Pozisyon Açıldı", f"""
+        {symbol} short işlemi açıldı ✅
+        Giriş Fiyatı: {entry_price}
+        TP: {take_profit_price}
+        SL: {stop_loss_price}
+        """)
 
         root.destroy()
+
 
     except ccxt.BaseError:
         pass
