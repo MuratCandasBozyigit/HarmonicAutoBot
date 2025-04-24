@@ -7,24 +7,6 @@ import hashlib
 import requests
 import customtkinter as ctk
 
-def set_isolated_mode(api_key, api_secret, symbol, use_testnet=False):
-    base_url = "https://testnet.binancefuture.com" if use_testnet else "https://fapi.binance.com"
-    endpoint = "/fapi/v1/marginType"
-    timestamp = int(time.time() * 1000)
-
-    binance_symbol = symbol.replace("/", "")
-    params = f"symbol={binance_symbol}&marginType=ISOLATED&timestamp={timestamp}"
-    signature = hmac.new(api_secret.encode(), params.encode(), hashlib.sha256).hexdigest()
-
-    headers = {
-        "X-MBX-APIKEY": api_key
-    }
-
-    url = f"{base_url}{endpoint}?{params}&signature={signature}"
-    response = requests.post(url, headers=headers)
-
-    if response.status_code != 200 and "marginType is already ISOLATED" not in response.text:
-        raise Exception(f"İzole moda geçiş başarısız: {response.text}")
 
 def show_message(root, title, message, icon="info"):
     message_box = ctk.CTkToplevel(root)
@@ -55,12 +37,6 @@ def execute_trade():
         show_message(root, "Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
         return
 
-    # İzole moda geçiş
-    try:
-        set_isolated_mode(globals.api_key, globals.api_secret, symbol, globals.use_testnet)
-    except Exception as e:
-        show_message(root, "İzolasyon Hatası", f"İzole moda geçiş başarısız:\n{e}", icon="warning")
-        return
 
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)
