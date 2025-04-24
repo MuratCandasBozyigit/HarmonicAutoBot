@@ -4,10 +4,24 @@ import Utils
 import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox as msgbox
+from Utils.binance_isolated import set_isolated_mode
+
+
+def show_message(root, title, message, icon="info"):
+    message_box = ctk.CTkToplevel(root)
+    message_box.title(title)
+    label = ctk.CTkLabel(message_box, text=message, font=("Arial", 14), wraplength=300)
+    label.pack(padx=20, pady=20)
+    button = ctk.CTkButton(message_box, text="Tamam", command=message_box.destroy)
+    button.pack(pady=10)
 
 def open_position(entry_price, symbol_input=None):
     if not globals.emir_acik:
         return
+
+    # Tek bir root penceresi oluşturuluyor
+    root = ctk.CTk()
+    root.withdraw()  # Mesaj kutularında gösterilmeden önce pencere gizleniyor.
 
     try:
         raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
@@ -15,6 +29,7 @@ def open_position(entry_price, symbol_input=None):
         binance_symbol = symbol.replace("/", "")
         timeframe = globals.timeframe_var.get()
 
+        # Binance API bağlantısı
         exchange = ccxt.binance({
             'apiKey': globals.api_key,
             'secret': globals.api_secret,
@@ -22,13 +37,14 @@ def open_position(entry_price, symbol_input=None):
             'options': {'defaultType': 'future'}
         })
         exchange.set_sandbox_mode(globals.use_testnet)
-
+        
         # İzole moda geçiş
-        try:
-            Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
-        except Exception as iso_error:
-            raise ValueError(f"İzole moda geçiş başarısız oldu: {str(iso_error)}")
-
+        iso_result = set_isolated_mode(binance_symbol)
+        if not iso_result:
+            show_message(root, "İzolasyon Hatası", f"{symbol} için izolasyon moduna geçilemedi. İşlem iptal edildi.", icon="warning")
+            return
+     
+        # Verilerin alınması
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
             raise ValueError("İşlem için geçerli veri alınamadı!")
@@ -40,6 +56,7 @@ def open_position(entry_price, symbol_input=None):
         market_price = df['close'].iloc[-1]
         coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
+        # Market emri ile işlem açma
         order = exchange.create_market_order(
             symbol=symbol,
             side='buy',
@@ -50,6 +67,7 @@ def open_position(entry_price, symbol_input=None):
         take_profit_price = round(entry_price * (1 + globals.tp_percent / 100), 2)
         stop_loss_price = round(entry_price * (1 - globals.sl_percent / 100), 2)
 
+        # TP ve SL emirleri
         exchange.create_order(
             symbol=symbol,
             type='take_profit_market',
@@ -74,42 +92,28 @@ def open_position(entry_price, symbol_input=None):
             }
         )
 
-        root = ctk.CTk()
-        root.withdraw()
+        # Başarılı işlem mesajı
         msgbox.showinfo("Long Pozisyon Açıldı", f"""
         {symbol} long işlemi açıldı ✅
         Giriş Fiyatı: {entry_price}
         TP: {take_profit_price}
         SL: {stop_loss_price}
         """)
-        root.destroy()
 
     except ccxt.InsufficientFunds:
-        root = ctk.CTk()
-        root.withdraw()
         msgbox.showerror("Yetersiz Bakiye", "USDT bakiyeniz bu işlemi açmak için yetersiz.")
-        root.destroy()
 
     except ccxt.InvalidOrder as e:
-        root = ctk.CTk()
-        root.withdraw()
         msgbox.showerror("Geçersiz Emir", f"Emir oluşturulamadı. Hata: {str(e)}")
-        root.destroy()
 
     except ccxt.BaseError as e:
-        root = ctk.CTk()
-        root.withdraw()
         msgbox.showerror("Borsa Hatası", f"Binance API'den gelen bir hata oluştu.\n{str(e)}")
-        root.destroy()
 
     except ValueError as e:
-        root = ctk.CTk()
-        root.withdraw()
         msgbox.showwarning("Veri Hatası", str(e))
-        root.destroy()
 
     except Exception as e:
-        root = ctk.CTk()
-        root.withdraw()
         msgbox.showerror("Bilinmeyen Hata", f"Beklenmeyen bir hata oluştu:\n{str(e)}")
-        root.destroy()
+
+    finally:
+        root.destroy()  # Pencere kapatılıyor
