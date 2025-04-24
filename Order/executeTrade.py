@@ -6,7 +6,7 @@ import hmac
 import hashlib
 import requests
 import customtkinter as ctk
-
+import Utils.binance_isolated as iso
 
 def show_message(root, title, message, icon="info"):
     message_box = ctk.CTkToplevel(root)
@@ -24,7 +24,7 @@ def execute_trade():
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = globals.timeframe_var.get()
-
+    iso.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
     try:
         exchange = ccxt.binance({
             'apiKey': globals.api_key,

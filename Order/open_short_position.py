@@ -21,7 +21,7 @@ def open_short_position(entry_price=None, symbol_input=None):
         })
         exchange.set_sandbox_mode(globals.use_testnet)
 
-        Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
+        #Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
 
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:

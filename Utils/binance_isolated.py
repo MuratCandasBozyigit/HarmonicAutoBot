@@ -1,12 +1,12 @@
-﻿# binance_isolated.py
-
-import requests
+﻿import requests
 import time
 import hmac
 import hashlib
+from Utils.globals import use_testnet, api_key, api_secret  # Globals'tan import ediyoruz
 
-def set_isolated_mode(api_key, api_secret, symbol):
-    base_url = "https://testnet.binancefuture.com"
+def set_isolated_mode(symbol):
+    # Testnet/mainnet kontrolü
+    base_url = "https://testnet.binancefuture.com" if use_testnet else "https://fapi.binance.com"
     endpoint = "/fapi/v1/marginType"
     timestamp = int(time.time() * 1000)
 
@@ -14,10 +14,15 @@ def set_isolated_mode(api_key, api_secret, symbol):
     signature = hmac.new(api_secret.encode(), params.encode(), hashlib.sha256).hexdigest()
 
     headers = {
-        "X-MBX-APIKEY": '991acee08da1311f39d71c52f7d8a12179e1a551096d7047573ed80d8271a8b3'
+        "X-MBX-APIKEY": api_key  # Artık globals'tan alıyoruz
     }
 
     url = f"{base_url}{endpoint}?{params}&signature={signature}"
-    response = requests.post(url, headers=headers)
-
-    print("İzolasyon modu sonucu:", response.status_code, response.text)
+    
+    try:
+        response = requests.post(url, headers=headers)
+        print("İzolasyon modu sonucu:", response.status_code, response.text)
+        return response.json()
+    except Exception as e:
+        print("İzolasyon hatası:", str(e))
+        return None

@@ -23,11 +23,11 @@ def open_position(entry_price, symbol_input=None):
         })
         exchange.set_sandbox_mode(globals.use_testnet)
 
-        # İzole moda geçiş
-        try:
-            Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
-        except Exception as iso_error:
-            raise ValueError(f"İzole moda geçiş başarısız oldu: {str(iso_error)}")
+        # # İzole moda geçiş
+        # try:
+        #     Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
+        # except Exception as iso_error:
+        #     raise ValueError(f"İzole moda geçiş başarısız oldu: {str(iso_error)}")
 
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
