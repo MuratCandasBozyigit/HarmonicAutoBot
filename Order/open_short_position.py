@@ -15,7 +15,7 @@ def show_message(root, title, message, icon="info"):
 def open_short_position(entry_price=None, symbol_input=None):
     root = ctk.CTk()
     root.withdraw()
-
+     
     raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
