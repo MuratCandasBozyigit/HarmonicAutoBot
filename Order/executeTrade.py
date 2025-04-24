@@ -24,7 +24,7 @@ def execute_trade():
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = globals.timeframe_var.get()
-    iso.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
+    
     try:
         exchange = ccxt.binance({
             'apiKey': globals.api_key,
@@ -36,7 +36,23 @@ def execute_trade():
     except Exception as e:
         show_message(root, "Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
         return
-
+        # Margin tipi kontrolü (Tüm fonksiyonlarda ortak kullanılabilir)
+    try:
+        position_info = exchange.fetch_positions_risk([binance_symbol])
+        if not position_info:
+            show_message(root, "Pozisyon Hatası", "Pozisyon bilgisi alınamadı", icon="cancel")
+            return
+        
+        if position_info[0]['marginType'].lower() != 'isolated':  # Case-insensitive kontrol
+            show_message(root, "Margin Tipi Hatası", 
+                       f"{binance_symbol} izole modda değil!\nLütfen önce izole moda geçin.", 
+                       icon="cancel")
+            return
+    except Exception as e:
+        show_message(root, "Sistem Hatası", 
+                   f"Margin tipi kontrolü başarısız:\n{str(e)}", 
+                   icon="cancel")
+        return
 
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)

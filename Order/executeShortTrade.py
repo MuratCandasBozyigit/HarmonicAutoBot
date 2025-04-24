@@ -1,11 +1,8 @@
 ﻿import ccxt
 from Utils import globals
 import Utils
-import time
-import hmac
-import hashlib
-import requests
 import customtkinter as ctk
+from tkinter import messagebox
 import Utils.binance_isolated as iso
 
 def show_message(root, title, message, icon="info"):
@@ -18,119 +15,106 @@ def show_message(root, title, message, icon="info"):
     button.pack(pady=10)
 
 def execute_short_trade():
-    root = ctk.CTk()  # Create the root window for message boxes
-    print(f"API Key: {globals.api_key}")
-    print(f"API Secret: {'*' * len(globals.api_secret) if globals.api_secret else 'TANIMSIZ'}")
-    # Get symbol info
-    raw_symbol = globals.symbol_var.get().strip().upper()
-    symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
-    binance_symbol = symbol.replace("/", "")
-    timeframe = globals.timeframe_var.get()
-    
-    # First try to set isolated mode
-     # 1. İzole mod kontrolü (ARTIK SADECE 1 PARAMETRE)
     try:
-        iso_result = iso.set_isolated_mode(binance_symbol)  # <-- DEĞİŞEN KISIM
-        
-        if iso_result is None:
-            show_message(root, "İzolasyon Hatası", 
-                       "API yanıtı alınamadı", 
-                       icon="cancel")
-            return
-            
-        if 'code' in iso_result and iso_result['code'] != 200:
-            show_message(root, "İzolasyon Hatası", 
-                       f"Binance hatası:\n{iso_result.get('msg')}", 
-                       icon="cancel")
-            return
-            
-    except Exception as e:
-        show_message(root, "İzolasyon Hatası", 
-                   f"İstek hatası:\n{str(e)}", 
-                   icon="cancel")
-        return
-    # Initialize exchange connection
-    try:
+        # Pencere yönetimi
+        root = ctk.CTk()
+        root.withdraw()
+
+        # Sembol işleme
+        raw_symbol = globals.symbol_var.get().strip().upper().replace("/", "").replace("USDT", "")  # Tüm '/' ve 'USDT'yi kaldır
+        symbol = f"{raw_symbol}/USDT"  # UI gösterimi için
+        binance_symbol = f"{raw_symbol}USDT"  # Binance formatı
+
+        # Binance bağlantısı
         exchange = ccxt.binance({
             'apiKey': globals.api_key,
             'secret': globals.api_secret,
-            'enableRateLimit': True,
-            'options': {'defaultType': 'future'}
+            'options': {
+                'defaultType': 'future',
+                'adjustForTimeDifference': True
+            }
         })
         exchange.set_sandbox_mode(globals.use_testnet)
-    except Exception as e:
-        show_message(root, "Bağlantı Hatası", 
-                   f"Binance API bağlantısı başarısız:\n{e}", 
-                   icon="cancel")
-        return
 
-    # Verify margin type is isolated
-    try:
-        position_info = exchange.fetch_positions_risk([binance_symbol])
-        if position_info and position_info[0]['marginType'] != 'isolated':
-            show_message(root, "Margin Tipi Hatası", 
-                       f"{binance_symbol} izole modda değil. İşlem iptal edildi.", 
-                       icon="cancel")
+        # 1. Sembol kontrolü
+        markets = exchange.load_markets()
+        if binance_symbol not in markets:
+            available_symbols = [s.split(':')[0] for s in markets.keys() if 'USDT' in s and ':' not in s][:5]  # İlk 5 sembol
+            messagebox.showerror("Hata", 
+                f"{binance_symbol} futures piyasasında bulunamadı!\n"
+                f"Örnek Semboller: {', '.join(available_symbols)}")
             return
-    except Exception as e:
-        show_message(root, "Margin Tipi Kontrol Hatası", 
-                   f"Margin tipi kontrol edilemedi:\n{e}", 
-                   icon="cancel")
-        return
 
-    # Proceed with trade if isolated mode is confirmed
-    try:
-        exchange.set_leverage(globals.leverage, symbol=symbol)
-        df = Utils.get_ohlcv(symbol, timeframe)
+        # 2. Margin tipi kontrolü
+        try:
+            positions = exchange.fetch_positions_risk([binance_symbol])
+            if positions and positions[0].get('marginType', '').lower() != 'isolated':
+                try:
+                    iso.set_isolated_mode(binance_symbol)
+                except Exception as iso_error:
+                    if 'No need to change' not in str(iso_error):
+                        raise iso_error
+        except Exception as e:
+            if 'No need to change' not in str(e):
+                messagebox.showerror("Hata", f"Margin kontrol hatası:\n{str(e)}")
+                return
+
+        # 3. Veri çekme
+        df = Utils.get_ohlcv(symbol, globals.timeframe_var.get())
         if df is None or df.empty:
-            show_message(root, "Veri Uyarısı", 
-                       "İşlem için geçerli veri alınamadı!", 
-                       icon="warning")
+            messagebox.showerror("Hata", "Veri alınamadı")
             return
-    except Exception as e:
-        show_message(root, "Veri/Kaldıraç Hatası", 
-                   f"Hata oluştu:\n{e}", 
-                   icon="cancel")
-        return
 
-    market_price = df['close'].iloc[-1]
-    coin_amount = round((globals.usdt_amount * globals.leverage) / market_price, 3)
+        # 4. Pozisyon boyutu hesaplama
+        market_price = df['close'].iloc[-1]
+        amount = round((globals.usdt_amount * globals.leverage) / market_price, 3)
 
-    try:
+        # 5. Emir oluşturma
         order = exchange.create_market_order(
             symbol=symbol,
             side='sell',
-            amount=coin_amount
+            amount=amount,
+            params={'positionSide': 'SHORT'}
         )
-
+        
+        # 6. TP/SL ayarları
         entry_price = float(order['average']) if 'average' in order else market_price
-        tp = round(entry_price * (1 - globals.tp_percent / 100), 2)
-        sl = round(entry_price * (1 + globals.sl_percent / 100), 2)
-
+        tp_price = round(entry_price * (1 - globals.tp_percent/100), 2)
+        sl_price = round(entry_price * (1 + globals.sl_percent/100), 2)
+        
+        # 7. TP/SL emirleri
         exchange.create_order(
             symbol=symbol,
-            type='take_profit_market',
+            type='TAKE_PROFIT_MARKET',
             side='buy',
-            amount=coin_amount,
-            params={'stopPrice': tp, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            amount=amount,
+            params={'stopPrice': tp_price, 'reduceOnly': True}
         )
-
+        
         exchange.create_order(
             symbol=symbol,
-            type='stop_market',
+            type='STOP_MARKET',
             side='buy',
-            amount=coin_amount,
-            params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            amount=amount,
+            params={'stopPrice': sl_price, 'reduceOnly': True}
         )
+        
+        messagebox.showinfo("Başarılı", 
+            f"SHORT pozisyon açıldı ✅\n"
+            f"Sembol: {symbol}\n"
+            f"Miktar: {amount}\n"
+            f"Giriş: {entry_price}\n"
+            f"TP: {tp_price}\n"
+            f"SL: {sl_price}")
 
-        show_message(root, "SHORT İşlem Açıldı", 
-                   f"{symbol} SHORT açıldı.\nTP: {tp}, SL: {sl}", 
-                   icon="check")
-    except ccxt.BaseError as e:
-        show_message(root, "API Hatası", 
-                   f"Binance API hatası:\n{e}", 
-                   icon="cancel")
+    except ccxt.InsufficientFunds:
+        messagebox.showerror("Hata", "Yetersiz bakiye! Lütfen bakiyenizi kontrol edin")
+    except ccxt.InvalidOrder as e:
+        messagebox.showerror("Emir Hatası", f"Geçersiz emir parametreleri: {str(e)}")
     except Exception as e:
-        show_message(root, "Beklenmeyen Hata", 
-                   f"Hata:\n{e}", 
-                   icon="cancel")
+        messagebox.showerror("Kritik Hata", f"Beklenmeyen hata: {str(e)}")
+    finally:
+        try:
+            root.destroy()
+        except:
+            pass
