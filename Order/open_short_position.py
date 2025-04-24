@@ -21,8 +21,17 @@ def open_short_position(entry_price=None, symbol_input=None):
         })
         exchange.set_sandbox_mode(globals.use_testnet)
 
-        Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
+        # ✅ İzole moda geçiş
+        try:
+            Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol, globals.use_testnet)
+        except Exception as e:
+            root = ctk.CTk()
+            root.withdraw()
+            msgbox.showwarning("İzolasyon Hatası", f"İzole moda geçiş başarısız olduğu için işlem durduruldu:\n{str(e)}")
+            root.destroy()
+            return
 
+        # ✅ Veriyi çek ve kontrol et
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
             raise ValueError("İşlem için yeterli veri alınamadı.")
@@ -34,6 +43,7 @@ def open_short_position(entry_price=None, symbol_input=None):
         market_price = df['close'].iloc[-1]
         coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
+        # ✅ Market SELL (short)
         order = exchange.create_market_order(
             symbol=symbol,
             side='sell',
@@ -44,6 +54,7 @@ def open_short_position(entry_price=None, symbol_input=None):
         take_profit_price = round(entry_price * (1 - globals.tp_percent / 100), 2)
         stop_loss_price = round(entry_price * (1 + globals.sl_percent / 100), 2)
 
+        # ✅ TP (BUY reduceOnly)
         exchange.create_order(
             symbol=symbol,
             type='take_profit_market',
@@ -56,6 +67,7 @@ def open_short_position(entry_price=None, symbol_input=None):
             }
         )
 
+        # ✅ SL (BUY reduceOnly)
         exchange.create_order(
             symbol=symbol,
             type='stop_market',
@@ -78,7 +90,7 @@ def open_short_position(entry_price=None, symbol_input=None):
         """)
         root.destroy()
 
-    except ccxt.InsufficientFunds as e:
+    except ccxt.InsufficientFunds:
         root = ctk.CTk()
         root.withdraw()
         msgbox.showerror("Yetersiz Bakiye", "USDT bakiyeniz işlem açmak için yetersiz!")

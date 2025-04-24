@@ -5,7 +5,7 @@ import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox as msgbox
 
-def open_position(entry_price, symbol_input=None):
+def open_position(entry_price=None, symbol_input=None):
     if not globals.emir_acik:
         return
 
@@ -23,11 +23,15 @@ def open_position(entry_price, symbol_input=None):
         })
         exchange.set_sandbox_mode(globals.use_testnet)
 
-        # İzole moda geçiş
+        # İzole moda geçiş (başarısızsa işlem durur)
         try:
-            Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
+            Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol, globals.use_testnet)
         except Exception as iso_error:
-            raise ValueError(f"İzole moda geçiş başarısız oldu: {str(iso_error)}")
+            root = ctk.CTk()
+            root.withdraw()
+            msgbox.showwarning("İzolasyon Hatası", f"İzole moda geçiş başarısız olduğu için işlem durduruldu:\n{str(iso_error)}")
+            root.destroy()
+            return
 
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:

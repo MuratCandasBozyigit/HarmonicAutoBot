@@ -1,46 +1,25 @@
 ﻿import ccxt
 from Utils import globals
 import Utils
+from Utils.binance_isolated import set_isolated_mode
 import time
-import hmac
-import hashlib
-import requests
 import customtkinter as ctk
 
-def set_isolated_mode(api_key, api_secret, symbol, use_testnet=False):
-    base_url = "https://testnet.binancefuture.com" if use_testnet else "https://fapi.binance.com"
-    endpoint = "/fapi/v1/marginType"
-    timestamp = int(time.time() * 1000)
-
-    binance_symbol = symbol.replace("/", "")
-    params = f"symbol={binance_symbol}&marginType=ISOLATED&timestamp={timestamp}"
-    signature = hmac.new(api_secret.encode(), params.encode(), hashlib.sha256).hexdigest()
-
-    headers = {
-        "X-MBX-APIKEY": api_key
-    }
-
-    url = f"{base_url}{endpoint}?{params}&signature={signature}"
-    response = requests.post(url, headers=headers)
-
-    if response.status_code != 200 and "marginType is already ISOLATED" not in response.text:
-        raise Exception(f"İzole moda geçiş başarısız: {response.text}")
 
 def show_message(root, title, message, icon="info"):
     message_box = ctk.CTkToplevel(root)
     message_box.title(title)
     label = ctk.CTkLabel(message_box, text=message, font=("Arial", 14), wraplength=300)
     label.pack(padx=20, pady=20)
-    
     button = ctk.CTkButton(message_box, text="Tamam", command=message_box.destroy)
     button.pack(pady=10)
 
+
 def execute_trade():
-    root = ctk.CTk()  # Create the root window for message boxes
+    root = ctk.CTk()
 
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
-    binance_symbol = symbol.replace("/", "")
     timeframe = globals.timeframe_var.get()
 
     try:
@@ -107,4 +86,3 @@ def execute_trade():
         show_message(root, "API Hatası", f"Binance API hatası:\n{e}", icon="cancel")
     except Exception as e:
         show_message(root, "Hata", f"Beklenmeyen hata:\n{e}", icon="cancel")
-
