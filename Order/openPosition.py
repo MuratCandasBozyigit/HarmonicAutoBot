@@ -4,7 +4,7 @@ import Utils
 import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox as msgbox
-
+from Utils.binance_isolated import set_isolated_mode
 def open_position(entry_price, symbol_input=None):
     if not globals.emir_acik:
         return

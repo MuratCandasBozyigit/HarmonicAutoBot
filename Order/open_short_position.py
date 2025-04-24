@@ -5,7 +5,7 @@ import os
 import tkinter as tk 
 import customtkinter as ctk
 from tkinter import messagebox as msgbox
-
+from Utils.binance_isolated import set_isolated_mode
 def open_short_position(entry_price=None, symbol_input=None):
     try:
         raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
