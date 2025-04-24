@@ -27,7 +27,7 @@ def open_position(entry_price, symbol_input=None):
 
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
-            return
+            raise ValueError("İşlem için geçerli veri alınamadı!")
 
         usdt_amount = globals.usdt_amount
         leverage = globals.leverage
@@ -73,8 +73,8 @@ def open_position(entry_price, symbol_input=None):
         root = ctk.CTk()
         root.withdraw()
 
-        msgbox.showinfo("Short Pozisyon Açıldı", f"""
-        {symbol} short işlemi açıldı ✅
+        msgbox.showinfo("Long Pozisyon Açıldı", f"""
+        {symbol} long işlemi açıldı ✅
         Giriş Fiyatı: {entry_price}
         TP: {take_profit_price}
         SL: {stop_loss_price}
@@ -82,8 +82,32 @@ def open_position(entry_price, symbol_input=None):
 
         root.destroy()
 
+    except ccxt.InsufficientFunds:
+        root = ctk.CTk()
+        root.withdraw()
+        msgbox.showerror("Yetersiz Bakiye", "USDT bakiyeniz bu işlemi açmak için yetersiz.")
+        root.destroy()
 
-    except ccxt.BaseError:
-        pass
-    except Exception:
-        pass
+    except ccxt.InvalidOrder as e:
+        root = ctk.CTk()
+        root.withdraw()
+        msgbox.showerror("Geçersiz Emir", f"Emir oluşturulamadı. Hata: {str(e)}")
+        root.destroy()
+
+    except ccxt.BaseError as e:
+        root = ctk.CTk()
+        root.withdraw()
+        msgbox.showerror("Borsa Hatası", f"Binance API'den gelen bir hata oluştu.\n{str(e)}")
+        root.destroy()
+
+    except ValueError as e:
+        root = ctk.CTk()
+        root.withdraw()
+        msgbox.showwarning("Veri Hatası", str(e))
+        root.destroy()
+
+    except Exception as e:
+        root = ctk.CTk()
+        root.withdraw()
+        msgbox.showerror("Bilinmeyen Hata", f"Beklenmeyen bir hata oluştu:\n{str(e)}")
+        root.destroy()
