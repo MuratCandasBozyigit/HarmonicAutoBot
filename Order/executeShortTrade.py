@@ -6,25 +6,7 @@ import hmac
 import hashlib
 import requests
 import customtkinter as ctk
-
-def set_isolated_mode(api_key, api_secret, symbol, use_testnet=False):
-    base_url = "https://testnet.binancefuture.com" if use_testnet else "https://fapi.binance.com"
-    endpoint = "/fapi/v1/marginType"
-    timestamp = int(time.time() * 1000)
-
-    binance_symbol = symbol.replace("/", "")
-    params = f"symbol={binance_symbol}&marginType=ISOLATED&timestamp={timestamp}"
-    signature = hmac.new(api_secret.encode(), params.encode(), hashlib.sha256).hexdigest()
-
-    headers = {
-        "X-MBX-APIKEY": api_key
-    }
-
-    url = f"{base_url}{endpoint}?{params}&signature={signature}"
-    response = requests.post(url, headers=headers)
-
-    if response.status_code != 200 and "marginType is already ISOLATED" not in response.text:
-        raise Exception(f"İzole moda geçiş başarısız: {response.text}")
+from Utils.binance_isolated import set_isolated_mode
 
 def show_message(root, title, message, icon="info"):
     message_box = ctk.CTkToplevel(root)
@@ -35,14 +17,16 @@ def show_message(root, title, message, icon="info"):
     button = ctk.CTkButton(message_box, text="Tamam", command=message_box.destroy)
     button.pack(pady=10)
 
+
 def execute_short_trade():
-    root = ctk.CTk()  # Create the root window for message boxes
+    root = ctk.CTk()  # Message box için kök pencere
 
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = globals.timeframe_var.get()
 
+    # Binance bağlantısı
     try:
         exchange = ccxt.binance({
             'apiKey': globals.api_key,
@@ -55,13 +39,13 @@ def execute_short_trade():
         show_message(root, "Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
         return
 
-    # İzole moda geçiş
-    try:
-        set_isolated_mode(globals.api_key, globals.api_secret, symbol, globals.use_testnet)
-    except Exception as e:
-        show_message(root, "İzolasyon Hatası", f"İzole moda geçiş başarısız:\n{e}", icon="warning")
+    iso_result = set_isolated_mode(binance_symbol)
+    if not iso_result:
+        show_message(root, "Margin Hatası", f"{symbol} için izolasyon moduna geçilemedi. İşlem iptal edildi.", icon="cancel")
         return
 
+
+    # Kaldıraç ve veri çekimi
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)
         df = Utils.get_ohlcv(symbol, timeframe)
@@ -72,9 +56,11 @@ def execute_short_trade():
         show_message(root, "Veri/Kaldıraç Hatası", f"Hata oluştu:\n{e}", icon="cancel")
         return
 
+    # Coin miktarı hesaplama
     market_price = df['close'].iloc[-1]
     coin_amount = round((globals.usdt_amount * globals.leverage) / market_price, 3)
 
+    # Short işlemi ve TP/SL emirleri
     try:
         order = exchange.create_market_order(
             symbol=symbol,
@@ -102,7 +88,7 @@ def execute_short_trade():
             params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
-        show_message(root, "SHORT İşlem Açıldı", f"{symbol} SHORT açıldı.\nTP: {tp}, SL: {sl}", icon="check")
+        show_message(root, "SHORT İşlem Açıldı", f"{symbol} SHORT açıldı.\nTP: {tp}, SL: {sl}\nİzole Mod: ✅", icon="check")
     except ccxt.BaseError as e:
         show_message(root, "API Hatası", f"Binance API hatası:\n{e}", icon="cancel")
     except Exception as e:
