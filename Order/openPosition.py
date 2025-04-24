@@ -23,7 +23,11 @@ def open_position(entry_price, symbol_input=None):
         })
         exchange.set_sandbox_mode(globals.use_testnet)
 
-        Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
+        # İzole moda geçiş
+        try:
+            Utils.set_isolated_mode(globals.api_key, globals.api_secret, binance_symbol)
+        except Exception as iso_error:
+            raise ValueError(f"İzole moda geçiş başarısız oldu: {str(iso_error)}")
 
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
@@ -72,14 +76,12 @@ def open_position(entry_price, symbol_input=None):
 
         root = ctk.CTk()
         root.withdraw()
-
         msgbox.showinfo("Long Pozisyon Açıldı", f"""
         {symbol} long işlemi açıldı ✅
         Giriş Fiyatı: {entry_price}
         TP: {take_profit_price}
         SL: {stop_loss_price}
         """)
-
         root.destroy()
 
     except ccxt.InsufficientFunds:
