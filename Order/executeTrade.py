@@ -5,7 +5,7 @@ import time
 import hmac
 import hashlib
 import requests
-from ctkmessagebox import CTkMessagebox
+import customtkinter as ctk
 
 def set_isolated_mode(api_key, api_secret, symbol, use_testnet=False):
     base_url = "https://testnet.binancefuture.com" if use_testnet else "https://fapi.binance.com"
@@ -26,7 +26,18 @@ def set_isolated_mode(api_key, api_secret, symbol, use_testnet=False):
     if response.status_code != 200 and "marginType is already ISOLATED" not in response.text:
         raise Exception(f"İzole moda geçiş başarısız: {response.text}")
 
+def show_message(root, title, message, icon="info"):
+    message_box = ctk.CTkToplevel(root)
+    message_box.title(title)
+    label = ctk.CTkLabel(message_box, text=message, font=("Arial", 14), wraplength=300)
+    label.pack(padx=20, pady=20)
+    
+    button = ctk.CTkButton(message_box, text="Tamam", command=message_box.destroy)
+    button.pack(pady=10)
+
 def execute_trade():
+    root = ctk.CTk()  # Create the root window for message boxes
+
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
@@ -41,24 +52,24 @@ def execute_trade():
         })
         exchange.set_sandbox_mode(globals.use_testnet)
     except Exception as e:
-        CTkMessagebox(title="Bağlantı Hatası", message=f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
+        show_message(root, "Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
         return
 
     # İzole moda geçiş
     try:
         set_isolated_mode(globals.api_key, globals.api_secret, symbol, globals.use_testnet)
     except Exception as e:
-        CTkMessagebox(title="İzolasyon Hatası", message=f"İzole moda geçiş başarısız:\n{e}", icon="warning")
+        show_message(root, "İzolasyon Hatası", f"İzole moda geçiş başarısız:\n{e}", icon="warning")
         return
 
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
-            CTkMessagebox(title="Uyarı", message="İşlem için geçerli veri alınamadı!", icon="warning")
+            show_message(root, "Uyarı", "İşlem için geçerli veri alınamadı!", icon="warning")
             return
     except Exception as e:
-        CTkMessagebox(title="Veri Hatası", message=f"Veri çekme veya kaldıraç ayarı hatası:\n{e}", icon="cancel")
+        show_message(root, "Veri Hatası", f"Veri çekme veya kaldıraç ayarı hatası:\n{e}", icon="cancel")
         return
 
     market_price = df['close'].iloc[-1]
@@ -91,8 +102,9 @@ def execute_trade():
             params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
-        CTkMessagebox(title="İşlem Başarılı", message=f"[LONG] {symbol} işlemi açıldı.\nTP: {tp}, SL: {sl}", icon="check")
+        show_message(root, "İşlem Başarılı", f"[LONG] {symbol} işlemi açıldı.\nTP: {tp}, SL: {sl}", icon="check")
     except ccxt.BaseError as e:
-        CTkMessagebox(title="API Hatası", message=f"Binance API hatası:\n{e}", icon="cancel")
+        show_message(root, "API Hatası", f"Binance API hatası:\n{e}", icon="cancel")
     except Exception as e:
-        CTkMessagebox(title="Hata", message=f"Beklenmeyen hata:\n{e}", icon="cancel")
+        show_message(root, "Hata", f"Beklenmeyen hata:\n{e}", icon="cancel")
+
