@@ -72,21 +72,33 @@ def execute_short_trade():
         tp = round(entry_price * (1 - globals.tp_percent / 100), 2)
         sl = round(entry_price * (1 + globals.sl_percent / 100), 2)
 
+               # TP Order
         exchange.create_order(
             symbol=symbol,
             type='take_profit_market',
             side='buy',
             amount=coin_amount,
-            params={'stopPrice': tp, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'stopPrice': tp,
+                'price': tp,               # <-- Bunu da ekliyoruz, kritik!
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
 
+        # SL Order
         exchange.create_order(
             symbol=symbol,
             type='stop_market',
             side='buy',
             amount=coin_amount,
-            params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'stopPrice': sl,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
+
 
         show_message(root, "SHORT İşlem Açıldı", f"{symbol} SHORT açıldı.\nTP: {tp}, SL: {sl}\nİzole Mod: ✅", icon="check")
     except ccxt.BaseError as e:
