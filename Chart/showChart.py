@@ -116,7 +116,7 @@ def show_chart(event=None):
     widget.bind("<B1-Motion>", on_drag)
 
     globals.should_auto_refresh.set(True)
-    globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
+    #globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
 
 def update_last_candle():
     if globals.df is None or globals.symbol is None:
