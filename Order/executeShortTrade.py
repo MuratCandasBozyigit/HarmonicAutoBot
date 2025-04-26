@@ -1,10 +1,6 @@
 ﻿import ccxt
 from Utils import globals
 import Utils
-import time
-import hmac
-import hashlib
-import requests
 import customtkinter as ctk
 from Utils.binance_isolated import set_isolated_mode
 
@@ -17,16 +13,29 @@ def show_message(root, title, message, icon="info"):
     button = ctk.CTkButton(message_box, text="Tamam", command=message_box.destroy)
     button.pack(pady=10)
 
-def execute_short_trade():
-    root = ctk.CTk()  # Message box için kök pencere
+def execute_short_trade(entry_price, symbol_input=None):
+    if not globals.emir_acik:
+        return
 
-    raw_symbol = globals.symbol_var.get().strip().upper()
-    symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
-    binance_symbol = symbol.replace("/", "")
-    timeframe = globals.timeframe_var.get()
+    # Local değişken olarak open_positions kümesini başlatıyoruz
+    open_positions = set()
 
-    # Binance bağlantısı
+    # Tek bir root penceresi oluşturuluyor
+    root = ctk.CTk()
+    root.withdraw()  # Mesaj kutularında gösterilmeden önce pencere gizleniyor.
+
     try:
+        raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
+        symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
+        binance_symbol = symbol.replace("/", "")
+        timeframe = globals.timeframe_var.get()
+
+        # Eğer pozisyon zaten açıksa işlem açma
+        if symbol in open_positions:
+            show_message(root, "İşlem Zaten Açık", f"{symbol} için pozisyon zaten açık.", icon="warning")
+            return
+
+        # Binance API bağlantısı
         exchange = ccxt.binance({
             'apiKey': globals.api_key,
             'secret': globals.api_secret,
@@ -34,38 +43,26 @@ def execute_short_trade():
             'options': {'defaultType': 'future'}
         })
         exchange.set_sandbox_mode(globals.use_testnet)
-    except Exception as e:
-        show_message(root, "Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
-        return
-
-    # İzole margin modu ayarlama
-    iso_result = set_isolated_mode(binance_symbol)
-    if not iso_result:
-        show_message(root, "Margin Hatası", f"{symbol} için izolasyon moduna geçilemedi. İşlem iptal edildi.", icon="cancel")
-        return
-
-    # Kaldıraç ve veri çekimi
-    try:
-        exchange.set_leverage(globals.leverage, symbol=symbol)
+        
+        # İzole moda geçiş
+        iso_result = set_isolated_mode(binance_symbol)
+        if not iso_result:
+            show_message(root, "İzolasyon Hatası", f"{symbol} için izolasyon moduna geçilemedi. İşlem iptal edildi.", icon="warning")
+            return
+     
+        # Verilerin alınması
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
-            show_message(root, "Veri Uyarısı", "İşlem için geçerli veri alınamadı!", icon="warning")
-            return
-    except Exception as e:
-        show_message(root, "Veri/Kaldıraç Hatası", f"Hata oluştu:\n{e}", icon="cancel")
-        return
+            raise ValueError("İşlem için geçerli veri alınamadı!")
 
-    # Coin miktarı hesaplama
-    try:
+        usdt_amount = globals.usdt_amount
+        leverage = globals.leverage
+        exchange.set_leverage(leverage, symbol=symbol)
+
         market_price = df['close'].iloc[-1]
-        coin_amount = round((globals.usdt_amount * globals.leverage) / market_price, 3)
-    except Exception as e:
-        show_message(root, "Miktar Hesaplama Hatası", f"Hata:\n{e}", icon="cancel")
-        return
+        coin_amount = round((usdt_amount * leverage) / market_price, 3)
 
-    # Short işlemi ve TP/SL emirleri
-    try:
-        # SHORT Market Order aç
+        # Short işlemi açma
         order = exchange.create_market_order(
             symbol=symbol,
             side='sell',
@@ -76,8 +73,8 @@ def execute_short_trade():
         tp_price = round(entry_price * (1 - globals.tp_percent / 100), 2)
         sl_price = round(entry_price * (1 + globals.sl_percent / 100), 2)
 
-        # TP Order
-        tp_order = exchange.create_order(
+        # TP ve SL emirleri
+        exchange.create_order(
             symbol=symbol,
             type='TAKE_PROFIT_MARKET',
             side='buy',
@@ -89,8 +86,7 @@ def execute_short_trade():
             }
         )
 
-        # SL Order
-        sl_order = exchange.create_order(
+        exchange.create_order(
             symbol=symbol,
             type='STOP_MARKET',
             side='buy',
@@ -102,6 +98,10 @@ def execute_short_trade():
             }
         )
 
+        # Local küme içinde pozisyonu ekliyoruz
+        open_positions.add(symbol)
+
+        # Başarılı işlem mesajı
         show_message(
             root,
             "SHORT İşlem Açıldı",

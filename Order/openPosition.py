@@ -29,6 +29,11 @@ def open_position(entry_price, symbol_input=None):
         binance_symbol = symbol.replace("/", "")
         timeframe = globals.timeframe_var.get()
 
+        # Eğer pozisyon zaten açıksa işlem açma
+        if symbol in globals.open_positions:
+            show_message(root, "İşlem Zaten Açık", f"{symbol} için pozisyon zaten açık.", icon="warning")
+            return
+
         # Binance API bağlantısı
         exchange = ccxt.binance({
             'apiKey': globals.api_key,
@@ -91,6 +96,9 @@ def open_position(entry_price, symbol_input=None):
                 'workingType': 'MARK_PRICE'
             }
         )
+
+        # Pozisyonu küme (set) içine ekliyoruz
+        globals.open_positions.add(symbol)
 
         # Başarılı işlem mesajı
         msgbox.showinfo("Long Pozisyon Açıldı", f"""

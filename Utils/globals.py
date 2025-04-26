@@ -15,6 +15,7 @@ refresh_job = None
 _drag_data = {'x': 0, 'y': 0}
 
 # Diğer değişkenler
+open_positions = set()
 emir_acik = False
 short_emir_acik=False
 aktif_emir_id = None
