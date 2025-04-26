@@ -1,10 +1,6 @@
 ﻿import ccxt
 from Utils import globals
 import Utils
-import time
-import hmac
-import hashlib
-import requests
 import customtkinter as ctk
 from Utils.binance_isolated import set_isolated_mode
 
