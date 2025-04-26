@@ -10,7 +10,6 @@ from datetime import datetime
 import Indicators
 import Utils
 import Utils.globals as globals
-import Cmd
 import Order
 import Chart
 from Utils.save_settings import open_settings_window  # Ayarlar butonu için import
@@ -85,7 +84,7 @@ def build_gui(root):
     def toggle_long_emir():
         globals.emir_acik = not globals.emir_acik
         emir_btn.configure(text="🔴 Long Emir Arıyor..." if globals.emir_acik else "🟢 Long Emir Ara")
-        print("[Emir Kontrol]", "✅ Long Emir aranıyor..." if globals.emir_acik else "❌ Long Emir modu kapalı.")
+       # print("[Emir Kontrol]", "✅ Long Emir aranıyor..." if globals.emir_acik else "❌ Long Emir modu kapalı.")
     emir_btn.configure(command=toggle_long_emir)
     emir_btn.grid(row=1, column=2, padx=5)
 
@@ -93,7 +92,7 @@ def build_gui(root):
     def toggle_short_emir():
         globals.short_emir_acik = not globals.short_emir_acik
         short_emir_btn.configure(text="🔴 Short Emir Arıyor..." if globals.short_emir_acik else "🟢 Short Emir Ara")
-        print("[Emir Kontrol]", "✅ Short Emir aranıyor..." if globals.short_emir_acik else "❌ Short Emir modu kapalı.")
+        #print("[Emir Kontrol]", "✅ Short Emir aranıyor..." if globals.short_emir_acik else "❌ Short Emir modu kapalı.")
     short_emir_btn.configure(command=toggle_short_emir)
     short_emir_btn.grid(row=1, column=3, padx=5)
 

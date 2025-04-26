@@ -1,6 +1,7 @@
 ﻿# Chart.py
 import gc
 from datetime import datetime, timezone
+from tkinter import messagebox
 import Utils
 import DrawPattern
 import Utils.globals as globals
@@ -10,7 +11,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 def show_chart(event=None):
     gc.collect()
 
-    # ✅ Refresh'i durdur (önceki after görevlerini iptal için)
     globals.should_auto_refresh.set(False)
     if globals.refresh_job:
         globals.root.after_cancel(globals.refresh_job)
@@ -21,12 +21,12 @@ def show_chart(event=None):
     timeframe = globals.timeframe_var.get()
 
     if not symbol or not timeframe:
-        print("Uyarı: Coin ve zaman dilimi girilmedi.")
+        messagebox.showwarning("Uyarı", "Coin ve zaman dilimi girilmedi.")
         return
 
     df = Utils.get_ohlcv(symbol, timeframe, limit=globals.limit_var.get())
     if df is None or df.empty:
-        print("Uyarı: Veri alınamadı.")
+        messagebox.showwarning("Uyarı", "Veri alınamadı.")
         return
 
     df = df.dropna().iloc[-globals.limit_var.get():]
@@ -85,7 +85,7 @@ def show_chart(event=None):
 
             canvas.draw_idle()
         except Exception as e:
-            print(f"[on_scroll] {type(e).__name__}: {e}")
+            messagebox.showerror("Hata (Scroll)", f"{type(e).__name__}: {e}")
 
     def on_press(event):
         globals._drag_data = {'x': event.x, 'y': event.y}
@@ -98,7 +98,7 @@ def show_chart(event=None):
             x_min, x_max = ax.get_xlim()
             y_min, y_max = ax.get_ylim()
 
-            x_shift = dx / 1500 * (x_max - x_min)  # Daha kontrollü hareket için artırıldı
+            x_shift = dx / 1500 * (x_max - x_min)
             y_shift = dy / 1500 * (y_max - y_min)
 
             ax.set_xlim(x_min - x_shift, x_max - x_shift)
@@ -109,13 +109,12 @@ def show_chart(event=None):
 
             canvas.draw_idle()
         except Exception as e:
-            print(f"[on_drag] {type(e).__name__}: {e}")
+            messagebox.showerror("Hata (Drag)", f"{type(e).__name__}: {e}")
 
     widget.bind("<MouseWheel>", on_scroll)
     widget.bind("<Button-1>", on_press)
     widget.bind("<B1-Motion>", on_drag)
 
-    # ✅ Auto refresh tekrar başlat
     globals.should_auto_refresh.set(True)
     globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
 
@@ -146,7 +145,7 @@ def update_last_candle():
         globals.canvas.draw_idle()
         gc.collect()
     except Exception as e:
-        print(f"[update_last_candle] {type(e).__name__}: {e}")
+        messagebox.showerror("Hata (Güncelleme)", f"{type(e).__name__}: {e}")
 
 def auto_refresh_chart():
     if not globals.should_auto_refresh.get():
@@ -158,12 +157,11 @@ def auto_refresh_chart():
         tf_seconds = tf_map.get(globals.timeframe, 60)
 
         if globals.last_candle_time and (now - globals.last_candle_time).total_seconds() >= tf_seconds:
-            print("[Refresh] Yeni mum tespit edildi, grafik güncelleniyor.")
             show_chart()
         else:
             update_last_candle()
     except Exception as e:
-        print(f"[auto_refresh_chart] {type(e).__name__}: {e}")
+        messagebox.showerror("Hata (Auto Refresh)", f"{type(e).__name__}: {e}")
     globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
 
 def pause_refresh(event):
