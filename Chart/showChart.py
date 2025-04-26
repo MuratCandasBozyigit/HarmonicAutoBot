@@ -1,5 +1,4 @@
-﻿# Chart.py
-import gc
+﻿import gc
 from datetime import datetime, timezone
 from tkinter import messagebox
 import Utils
@@ -9,13 +8,15 @@ import mplfinance as mpf
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 def show_chart(event=None):
-    gc.collect()
+    gc.collect()  # Çöp toplama işlemi başlat
 
-    globals.should_auto_refresh.set(False)
+    # Eski zamanlayıcıyı iptal et
     if globals.refresh_job:
         globals.root.after_cancel(globals.refresh_job)
         globals.refresh_job = None
-
+    
+    globals.should_auto_refresh.set(False)
+    
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     timeframe = globals.timeframe_var.get()
@@ -34,8 +35,17 @@ def show_chart(event=None):
     globals.symbol = symbol
     globals.timeframe = timeframe
 
+    # Eski widget'ları temizle ve eski grafiği bellekten sil
     for widget in globals.chart_frame.winfo_children():
         widget.destroy()
+    
+    if globals.fig:
+        # Eski figür ve aksları sil
+        globals.fig.clf()  # Figure'ı temizle
+        globals.ax.clear()  # Axes'ı temizle
+        del globals.fig  # Bellekten kaldır
+        del globals.ax
+        gc.collect()  # Çöp toplama işlemi
 
     fig, axlist = mpf.plot(
         df,
@@ -53,8 +63,9 @@ def show_chart(event=None):
     widget = canvas.get_tk_widget()
     widget.pack(fill="both", expand=True)
 
-    globals.ax = ax
-    globals.canvas = canvas
+    globals.fig = fig  # Yeni figür
+    globals.ax = ax    # Yeni aks
+    globals.canvas = canvas  # Yeni canvas
     globals.last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
 
     def on_scroll(event):
