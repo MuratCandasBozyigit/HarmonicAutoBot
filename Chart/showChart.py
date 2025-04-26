@@ -156,10 +156,16 @@ def auto_refresh_chart():
         tf_map = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
         tf_seconds = tf_map.get(globals.timeframe, 60)
 
-        if globals.last_candle_time and (now - globals.last_candle_time).total_seconds() >= tf_seconds:
-            show_chart()
+        if globals.last_candle_time:
+            # Yeni mum açıldığında sadece bir kez grafiği güncelle
+            time_diff = (now - globals.last_candle_time).total_seconds()
+            if time_diff >= tf_seconds:  # Eğer belirtilen zaman diliminde yeni mum açıldıysa
+                show_chart()
+            else:
+                update_last_candle()  # Eğer yeni mum açılmadıysa sadece son mumu güncelle
         else:
-            update_last_candle()
+            show_chart()  # İlk açılışta göster
+
     except Exception as e:
         messagebox.showerror("Hata (Auto Refresh)", f"{type(e).__name__}: {e}")
     globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
