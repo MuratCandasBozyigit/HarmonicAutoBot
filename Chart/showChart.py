@@ -47,6 +47,7 @@ def show_chart(event=None):
         del globals.ax
         gc.collect()  # Çöp toplama işlemi
 
+    # Yeni figür ve aks oluştur
     fig, axlist = mpf.plot(
         df,
         type='candle',
@@ -58,14 +59,16 @@ def show_chart(event=None):
     )
     ax = axlist[0]
 
+    # Yeni canvas oluştur ve tkinter penceresine ekle
     canvas = FigureCanvasTkAgg(fig, master=globals.chart_frame)
     canvas.draw()
     widget = canvas.get_tk_widget()
     widget.pack(fill="both", expand=True)
 
-    globals.fig = fig  # Yeni figür
-    globals.ax = ax    # Yeni aks
-    globals.canvas = canvas  # Yeni canvas
+    # Yeni figür ve aksleri globals'da sakla
+    globals.fig = fig
+    globals.ax = ax
+    globals.canvas = canvas
     globals.last_candle_time = df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc)
 
     def on_scroll(event):
@@ -138,6 +141,7 @@ def update_last_candle():
         high = max(globals.df.iloc[-1]['high'], last_price)
         low = min(globals.df.iloc[-1]['low'], last_price)
 
+        # Yalnızca son mum verisini güncelle
         globals.df.loc[globals.df.index[-1], 'close'] = last_price
         globals.df.loc[globals.df.index[-1], 'high'] = high
         globals.df.loc[globals.df.index[-1], 'low'] = low
@@ -154,7 +158,7 @@ def update_last_candle():
         DrawPattern.draw_bullish_patterns(globals.df, globals.ax)
         DrawPattern.draw_bearish_patterns(globals.df, globals.ax)
         globals.canvas.draw_idle()
-        gc.collect()
+        gc.collect()  # Bellek temizleme işlemi
     except Exception as e:
         messagebox.showerror("Hata (Güncelleme)", f"{type(e).__name__}: {e}")
 
