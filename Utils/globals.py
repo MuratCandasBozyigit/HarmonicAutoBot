@@ -43,15 +43,15 @@ def update_globals():
     tp_percent = float(os.getenv("TP_PERCENT", "0.7"))  # Take Profit yüzdesi
     sl_percent = float(os.getenv("SL_PERCENT", "1.5"))  # Stop Loss yüzdesi
 
-    print("\n--- Ayarlar Güncellendi ---")
-    print(f"API Key: {api_key}")
-    print(f"API Secret: {api_secret}")
-    print(f"Leverage: {leverage}")
-    print(f"USDT Amount: {usdt_amount}")
-    print(f"Testnet: {use_testnet}")
-    print(f"Take Profit (%) : {tp_percent}")
-    print(f"Stop Loss (%) : {sl_percent}")
-    print("-------------------------")
+    # print("\n--- Ayarlar Güncellendi ---")
+    # print(f"API Key: {api_key}")
+    # print(f"API Secret: {api_secret}")
+    # print(f"Leverage: {leverage}")
+    # print(f"USDT Amount: {usdt_amount}")
+    # print(f"Testnet: {use_testnet}")
+    # print(f"Take Profit (%) : {tp_percent}")
+    # print(f"Stop Loss (%) : {sl_percent}")
+    # print("-------------------------")
 
 # UI Nesneleri
 root = None
@@ -104,24 +104,24 @@ exchange = ccxt.binance({
 # Testnet modunu ayarla
 exchange.set_sandbox_mode(use_testnet)
 
-def print_settings():
-    """Her 10 saniyede bir ayarları yazdır."""
-    while True:
-        print("\n--- Ayarlar ---")
-        print(f"API Key: {api_key}")
-        print(f"API Secret: {api_secret}")
-        print(f"Leverage: {leverage}")
-        print(f"USDT Amount: {usdt_amount}")
-        print(f"Testnet: {use_testnet}")
-        print(f"Take Profit (%) : {tp_percent}")
-        print(f"Stop Loss (%) : {sl_percent}")
-        print(f"Binance Exchange Connection: {exchange}")
-        print("-----------------")
-        time.sleep(10)  # 10 saniye bekle
+# def print_settings():
+#     """Her 10 saniyede bir ayarları yazdır."""
+#     while True:
+#         print("\n--- Ayarlar ---")
+#         print(f"API Key: {api_key}")
+#         print(f"API Secret: {api_secret}")
+#         print(f"Leverage: {leverage}")
+#         print(f"USDT Amount: {usdt_amount}")
+#         print(f"Testnet: {use_testnet}")
+#         print(f"Take Profit (%) : {tp_percent}")
+#         print(f"Stop Loss (%) : {sl_percent}")
+#         print(f"Binance Exchange Connection: {exchange}")
+#         print("-----------------")
+#         time.sleep(10)  # 10 saniye bekle
 
-# Bu fonksiyonu ayrı bir iş parçacığında çalıştırmak için:
-import threading
+# # Bu fonksiyonu ayrı bir iş parçacığında çalıştırmak için:
+# import threading
 
-settings_thread = threading.Thread(target=print_settings)
-settings_thread.daemon = True  # Ana thread sona erdiğinde bu thread de sonlanır
-settings_thread.start()
+# settings_thread = threading.Thread(target=print_settings)
+# settings_thread.daemon = True  # Ana thread sona erdiğinde bu thread de sonlanır
+# settings_thread.start()
