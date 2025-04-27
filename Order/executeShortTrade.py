@@ -13,8 +13,7 @@ def show_message(title, message, icon="info"):
     button.pack(pady=10)
 
 def execute_short_trade():
-    if not globals.emir_acik:
-        return
+   
 
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
@@ -50,31 +49,50 @@ def execute_short_trade():
     market_price = df['close'].iloc[-1]
     coin_amount = round((globals.usdt_amount * globals.leverage) / market_price, 3)
 
+    if coin_amount <= 0:
+        show_message("Hatalı Miktar", "İşlem miktarı sıfır veya çok küçük!", icon="warning")
+        return
+
     try:
         order = exchange.create_market_order(
             symbol=symbol,
-            side='sell',  # BURASI SELL
+            side='sell',
             amount=coin_amount
         )
 
-        entry_price = float(order['average']) if 'average' in order else market_price
-        tp_price = round(entry_price * (1 - globals.tp_percent / 100), 2)  # SHORT için TP aşağıda
-        sl_price = round(entry_price * (1 + globals.sl_percent / 100), 2)  # SHORT için SL yukarıda
+        # Emir doğru oluşmuş mu kontrolü
+        if not order or order.get('status') not in ['open', 'closed', 'filled']:
+            show_message("İşlem Hatası", "Short işlemi açılamadı! Emir reddedildi veya oluşturulamadı.", icon="cancel")
+            return
 
+        entry_price = float(order['average']) if 'average' in order and order['average'] else market_price
+        tp_price = round(entry_price * (1 - globals.tp_percent / 100), 4)  # SHORT için TP aşağı
+        sl_price = round(entry_price * (1 + globals.sl_percent / 100), 4)  # SHORT için SL yukarı
+
+        # TP emri
         exchange.create_order(
             symbol=symbol,
             type='TAKE_PROFIT_MARKET',
-            side='buy',  # SHORT için TP buy
+            side='buy',
             amount=coin_amount,
-            params={'triggerPrice': tp_price, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'triggerPrice': tp_price,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
 
+        # SL emri
         exchange.create_order(
             symbol=symbol,
             type='STOP_MARKET',
-            side='buy',  # SHORT için SL buy
+            side='buy',
             amount=coin_amount,
-            params={'triggerPrice': sl_price, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'triggerPrice': sl_price,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
 
         show_message(
