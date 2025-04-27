@@ -2,10 +2,12 @@
 from tkinter import messagebox
 import os
 from dotenv import load_dotenv, set_key
+from Utils import globals as globals
 
-load_dotenv()
+load_dotenv()  # Başlangıçta .env dosyasını yükle
 
 def open_settings_window(root):
+    """Ayarlar penceresini açan fonksiyon"""
     win = ctk.CTkToplevel(root)
     win.title("Ayarlar")
     win.geometry("380x600")
@@ -21,6 +23,7 @@ def open_settings_window(root):
     theme_selector.pack(padx=20, fill="x")
 
     def apply_theme():
+        """Seçilen temayı uygular"""
         selected = theme_var.get().lower()
         ctk.set_appearance_mode(selected)
         messagebox.showinfo("Tema", f"Tema '{selected.capitalize()}' olarak ayarlandı.")
@@ -55,13 +58,17 @@ def open_settings_window(root):
     use_testnet_var = ctk.BooleanVar(value=os.getenv("USE_TESTNET", "False") == "True")
     ctk.CTkCheckBox(win, text="Testnet Kullan", variable=use_testnet_var).pack(padx=20, pady=15)
 
-    # Ayarları Kaydet
     def save_settings():
+        """Ayarları kaydet ve globals'ı güncelle"""
         set_key(".env", "REAL_API_KEY", api_key_entry.get())
         set_key(".env", "REAL_API_SECRET", api_secret_entry.get())
         set_key(".env", "LEVERAGE", leverage_entry.get())
         set_key(".env", "USDT_AMOUNT", usdt_entry.get())
         set_key(".env", "USE_TESTNET", str(use_testnet_var.get()))
+
+        # Ayarları globals.py'deki değerlere yansıt
+        globals.update_globals()
+
         messagebox.showinfo("Başarılı", "✅ Ayarlar başarıyla kaydedildi.")
 
     ctk.CTkButton(win, text="💾 Kaydet", command=save_settings).pack(padx=20, pady=20, fill="x")
