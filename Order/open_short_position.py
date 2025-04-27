@@ -1,11 +1,13 @@
 ﻿import ccxt
+import customtkinter as ctk
 from Utils import globals
 import Utils
-import customtkinter as ctk
 from Utils.binance_isolated import set_isolated_mode
 
-open_position=(set)
+# --- AÇIK POZİSYONLARI TUTAN SET ---
+open_positions = set()
 
+# --- MESAJ GÖSTERME FONKSİYONU ---
 def show_message(root, title, message, icon="info"):
     message_box = ctk.CTkToplevel(root)
     message_box.title(title)
@@ -14,14 +16,21 @@ def show_message(root, title, message, icon="info"):
     button = ctk.CTkButton(message_box, text="Tamam", command=message_box.destroy)
     button.pack(pady=10)
 
+# --- SHORT POZİSYON AÇMA FONKSİYONU ---
 def open_short_position(entry_price=None, symbol_input=None):
     root = ctk.CTk()
     root.withdraw()
-     
+
     raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
     timeframe = globals.timeframe_var.get()
+
+    # --- AÇIK POZİSYON VAR MI KONTROLÜ ---
+    if symbol in open_positions:
+        show_message(root, "Zaten Açık", f"{symbol} için zaten açık bir short pozisyon var.", icon="warning")
+        root.destroy()
+        return
 
     try:
         exchange = ccxt.binance({
@@ -35,7 +44,7 @@ def open_short_position(entry_price=None, symbol_input=None):
         show_message(root, "Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
         return
 
-    # İzole moda geçiş
+    # --- İZOLE MODA GEÇİŞ ---
     iso_result = set_isolated_mode(binance_symbol)
     if not iso_result:
         show_message(root, "İzolasyon Hatası", f"{symbol} için izolasyon moduna geçilemedi. İşlem iptal edildi.", icon="warning")
@@ -61,10 +70,14 @@ def open_short_position(entry_price=None, symbol_input=None):
             amount=coin_amount
         )
 
+        # --- POZİSYON BAŞARILIYSA SET'E EKLE ---
+        open_positions.add(symbol)
+
         entry_price = float(order['average']) if 'average' in order else market_price
         tp = round(entry_price * (1 - globals.tp_percent / 100), 2)
         sl = round(entry_price * (1 + globals.sl_percent / 100), 2)
 
+        # --- TP EMRİ ---
         exchange.create_order(
             symbol=symbol,
             type='take_profit_market',
@@ -73,6 +86,7 @@ def open_short_position(entry_price=None, symbol_input=None):
             params={'stopPrice': tp, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
+        # --- SL EMRİ ---
         exchange.create_order(
             symbol=symbol,
             type='stop_market',
@@ -82,6 +96,7 @@ def open_short_position(entry_price=None, symbol_input=None):
         )
 
         show_message(root, "Short İşlem Açıldı", f"[SHORT] {symbol} işlemi açıldı.\nTP: {tp}, SL: {sl}", icon="check")
+
     except ccxt.BaseError as e:
         show_message(root, "API Hatası", f"Binance API hatası:\n{e}", icon="cancel")
     except Exception as e:
