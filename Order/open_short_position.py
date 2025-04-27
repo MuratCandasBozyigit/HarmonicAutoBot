@@ -81,25 +81,33 @@ def open_short_position(entry_price=None, symbol_input=None):
         open_positions.add(symbol)
 
         entry_price = float(order['average']) if 'average' in order else market_price
-        tp = round(entry_price * (1 - globals.tp_percent / 100), 2)
-        sl = round(entry_price * (1 + globals.sl_percent / 100), 2)
+        tp = round(entry_price * (1 - globals.tp_percent / 100), 4)  # Daha hassas
+        sl = round(entry_price * (1 + globals.sl_percent / 100), 4)
 
-        # --- TP EMRİ ---
+        # --- TAKE PROFIT EMRİ ---
         exchange.create_order(
             symbol=symbol,
-            type='take_profit_market',
+            type='TAKE_PROFIT_MARKET',
             side='buy',
             amount=coin_amount,
-            params={'stopPrice': tp, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'stopPrice': tp,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
 
-        # --- SL EMRİ ---
+        # --- STOP LOSS EMRİ ---
         exchange.create_order(
             symbol=symbol,
-            type='stop_market',
+            type='STOP_MARKET',
             side='buy',
             amount=coin_amount,
-            params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
+            params={
+                'stopPrice': sl,
+                'reduceOnly': True,
+                'workingType': 'MARK_PRICE'
+            }
         )
 
         show_message("Short İşlem Açıldı", f"[SHORT] {symbol} işlemi açıldı.\nTP: {tp}, SL: {sl}", icon="check")
