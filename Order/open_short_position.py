@@ -4,6 +4,8 @@ import Utils
 import customtkinter as ctk
 from Utils.binance_isolated import set_isolated_mode
 
+open_position=(set)
+
 def show_message(root, title, message, icon="info"):
     message_box = ctk.CTkToplevel(root)
     message_box.title(title)
