@@ -60,15 +60,14 @@ def open_settings_window(root):
 
     def save_settings():
         """Ayarları kaydet ve globals'ı güncelle"""
-        # .env dosyasına kaydet
         set_key(".env", "REAL_API_KEY", api_key_entry.get())
         set_key(".env", "REAL_API_SECRET", api_secret_entry.get())
         set_key(".env", "LEVERAGE", leverage_entry.get())
         set_key(".env", "USDT_AMOUNT", usdt_entry.get())
         set_key(".env", "USE_TESTNET", str(use_testnet_var.get()))
 
-        # globals.py'deki ayarları güncellemek için 1 saniye sonra load_env fonksiyonunu çalıştır
-        win.after(1000, globals.load_env)  # 1000ms = 1 saniye
+        # Ayarları globals.py'deki değerlere yansıt
+        globals.update_globals()
 
         messagebox.showinfo("Başarılı", "✅ Ayarlar başarıyla kaydedildi.")
 
