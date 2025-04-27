@@ -8,19 +8,27 @@ from Utils.binance_isolated import set_isolated_mode
 open_positions = set()
 
 # --- MESAJ GÖSTERME FONKSİYONU ---
-def show_message(root, title, message, icon="info"):
-    message_box = ctk.CTkToplevel(root)
+def show_message(title, message, icon="info"):
+    msg_root = ctk.CTk()
+    msg_root.withdraw()  # Ana pencereyi gizle
+
+    message_box = ctk.CTkToplevel(msg_root)
     message_box.title(title)
+
     label = ctk.CTkLabel(message_box, text=message, font=("Arial", 14), wraplength=300)
     label.pack(padx=20, pady=20)
-    button = ctk.CTkButton(message_box, text="Tamam", command=message_box.destroy)
+
+    def close_window():
+        message_box.destroy()
+        msg_root.destroy()
+
+    button = ctk.CTkButton(message_box, text="Tamam", command=close_window)
     button.pack(pady=10)
+
+    message_box.mainloop()
 
 # --- SHORT POZİSYON AÇMA FONKSİYONU ---
 def open_short_position(entry_price=None, symbol_input=None):
-    root = ctk.CTk()
-    root.withdraw()
-
     raw_symbol = symbol_input or globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     binance_symbol = symbol.replace("/", "")
@@ -28,8 +36,7 @@ def open_short_position(entry_price=None, symbol_input=None):
 
     # --- AÇIK POZİSYON VAR MI KONTROLÜ ---
     if symbol in open_positions:
-        show_message(root, "Zaten Açık", f"{symbol} için zaten açık bir short pozisyon var.", icon="warning")
-        root.destroy()
+        show_message("Zaten Açık", f"{symbol} için zaten açık bir short pozisyon var.", icon="warning")
         return
 
     try:
@@ -41,23 +48,23 @@ def open_short_position(entry_price=None, symbol_input=None):
         })
         exchange.set_sandbox_mode(globals.use_testnet)
     except Exception as e:
-        show_message(root, "Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
+        show_message("Bağlantı Hatası", f"Binance API bağlantısı başarısız:\n{e}", icon="cancel")
         return
 
     # --- İZOLE MODA GEÇİŞ ---
     iso_result = set_isolated_mode(binance_symbol)
     if not iso_result:
-        show_message(root, "İzolasyon Hatası", f"{symbol} için izolasyon moduna geçilemedi. İşlem iptal edildi.", icon="warning")
+        show_message("İzolasyon Hatası", f"{symbol} için izolasyon moduna geçilemedi. İşlem iptal edildi.", icon="warning")
         return
 
     try:
         exchange.set_leverage(globals.leverage, symbol=symbol)
         df = Utils.get_ohlcv(symbol, timeframe)
         if df is None or df.empty:
-            show_message(root, "Uyarı", "İşlem için geçerli veri alınamadı!", icon="warning")
+            show_message("Uyarı", "İşlem için geçerli veri alınamadı!", icon="warning")
             return
     except Exception as e:
-        show_message(root, "Veri Hatası", f"Veri çekme veya kaldıraç ayarı hatası:\n{e}", icon="cancel")
+        show_message("Veri Hatası", f"Veri çekme veya kaldıraç ayarı hatası:\n{e}", icon="cancel")
         return
 
     market_price = df['close'].iloc[-1]
@@ -95,11 +102,9 @@ def open_short_position(entry_price=None, symbol_input=None):
             params={'stopPrice': sl, 'reduceOnly': True, 'workingType': 'MARK_PRICE'}
         )
 
-        show_message(root, "Short İşlem Açıldı", f"[SHORT] {symbol} işlemi açıldı.\nTP: {tp}, SL: {sl}", icon="check")
+        show_message("Short İşlem Açıldı", f"[SHORT] {symbol} işlemi açıldı.\nTP: {tp}, SL: {sl}", icon="check")
 
     except ccxt.BaseError as e:
-        show_message(root, "API Hatası", f"Binance API hatası:\n{e}", icon="cancel")
+        show_message("API Hatası", f"Binance API hatası:\n{e}", icon="cancel")
     except Exception as e:
-        show_message(root, "Hata", f"Beklenmeyen hata:\n{e}", icon="cancel")
-
-    root.destroy()
+        show_message("Hata", f"Beklenmeyen hata:\n{e}", icon="cancel")
