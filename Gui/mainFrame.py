@@ -66,8 +66,8 @@ def build_gui(root):
     timeframe_combo.grid(row=0, column=3, padx=5)
 
     ctk.CTkLabel(control_frame, text="Bar Sayısı:").grid(row=0, column=4, padx=5)
-    globals.limit_var = ctk.IntVar(value=100)
-    ctk.CTkSegmentedButton(control_frame, values=["50", "100", "250", "500", "1000"],
+    globals.limit_var = ctk.IntVar(value=20)
+    ctk.CTkSegmentedButton(control_frame, values=["20","50", "100", "250", "500", "1000"],
                            variable=globals.limit_var).grid(row=0, column=5, padx=5)
 
     ctk.CTkButton(control_frame, text="Veriyi Göster",
