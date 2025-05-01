@@ -1,11 +1,22 @@
-﻿# getohlcv.py
-
-import time
+﻿import time
 import pandas as pd
 import Utils.globals as globals
-from tkinter import messagebox
+import customtkinter as ctk
 
 _last_fetch_time = 0
+
+def show_error(title, message):
+    error_window = ctk.CTkToplevel()
+    error_window.title(title)
+    error_window.geometry("400x200")
+    error_window.resizable(False, False)
+    error_window.grab_set()
+
+    label = ctk.CTkLabel(error_window, text=message, wraplength=350, justify="left", font=ctk.CTkFont(size=14))
+    label.pack(padx=20, pady=40)
+
+    button = ctk.CTkButton(error_window, text="Tamam", command=error_window.destroy)
+    button.pack(pady=10)
 
 def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300, cooldown=1.0):
     global _last_fetch_time
@@ -22,5 +33,6 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300, cooldown=1.0):
         df.set_index("timestamp", inplace=True)
         return df if not df.empty else None
     except Exception as e:
-        print(f"[HATA: OHLCV] {str(e)}") if getattr(globals, "debug", False) else messagebox.showerror("Hata", f"Veri alınamadı:\n{str(e)}")
+        msg = f"Veri alınamadı:\n{str(e)}"
+        print(f"[HATA: OHLCV] {msg}") if getattr(globals, "debug", False) else show_error("Hata", msg)
         return None
