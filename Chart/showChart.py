@@ -1,6 +1,7 @@
 ﻿import gc
 from datetime import datetime, timezone
-from tkinter import messagebox
+from tkinter import messagebox  # ctk'da alternatif yok
+import customtkinter as ctk
 import Utils
 import DrawPattern
 import Utils.globals as globals
@@ -8,15 +9,14 @@ import mplfinance as mpf
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 def show_chart(event=None):
-    gc.collect()  # Çöp toplama işlemi başlat
+    gc.collect()
 
-    # Eski zamanlayıcıyı iptal et
     if globals.refresh_job:
         globals.root.after_cancel(globals.refresh_job)
         globals.refresh_job = None
-    
+
     globals.should_auto_refresh.set(False)
-    
+
     raw_symbol = globals.symbol_var.get().strip().upper()
     symbol = raw_symbol if "/" in raw_symbol else raw_symbol + "/USDT"
     timeframe = globals.timeframe_var.get()
@@ -35,19 +35,16 @@ def show_chart(event=None):
     globals.symbol = symbol
     globals.timeframe = timeframe
 
-    # Eski widget'ları temizle ve eski grafiği bellekten sil
     for widget in globals.chart_frame.winfo_children():
         widget.destroy()
-    
-    if globals.fig:
-        # Eski figür ve aksları sil
-        globals.fig.clf()  # Figure'ı temizle
-        globals.ax.clear()  # Axes'ı temizle
-        del globals.fig  # Bellekten kaldır
-        del globals.ax
-        gc.collect()  # Çöp toplama işlemi
 
-    # Yeni figür ve aks oluştur
+    if globals.fig:
+        globals.fig.clf()
+        globals.ax.clear()
+        del globals.fig
+        del globals.ax
+        gc.collect()
+
     fig, axlist = mpf.plot(
         df,
         type='candle',
@@ -59,13 +56,11 @@ def show_chart(event=None):
     )
     ax = axlist[0]
 
-    # Yeni canvas oluştur ve tkinter penceresine ekle
     canvas = FigureCanvasTkAgg(fig, master=globals.chart_frame)
     canvas.draw()
     widget = canvas.get_tk_widget()
     widget.pack(fill="both", expand=True)
 
-    # Yeni figür ve aksleri globals'da sakla
     globals.fig = fig
     globals.ax = ax
     globals.canvas = canvas
@@ -141,7 +136,6 @@ def update_last_candle():
         high = max(globals.df.iloc[-1]['high'], last_price)
         low = min(globals.df.iloc[-1]['low'], last_price)
 
-        # Yalnızca son mum verisini güncelle
         globals.df.loc[globals.df.index[-1], 'close'] = last_price
         globals.df.loc[globals.df.index[-1], 'high'] = high
         globals.df.loc[globals.df.index[-1], 'low'] = low
@@ -158,7 +152,7 @@ def update_last_candle():
         DrawPattern.draw_bullish_patterns(globals.df, globals.ax)
         DrawPattern.draw_bearish_patterns(globals.df, globals.ax)
         globals.canvas.draw_idle()
-        gc.collect()  # Bellek temizleme işlemi
+        gc.collect()
     except Exception as e:
         messagebox.showerror("Hata (Güncelleme)", f"{type(e).__name__}: {e}")
 
@@ -172,15 +166,13 @@ def auto_refresh_chart():
         tf_seconds = tf_map.get(globals.timeframe, 60)
 
         if globals.last_candle_time:
-            # Yeni mum açıldığında sadece bir kez grafiği güncelle
             time_diff = (now - globals.last_candle_time).total_seconds()
-            if time_diff >= tf_seconds:  # Eğer belirtilen zaman diliminde yeni mum açıldıysa
+            if time_diff >= tf_seconds:
                 show_chart()
             else:
-                update_last_candle()  # Eğer yeni mum açılmadıysa sadece son mumu güncelle
+                update_last_candle()
         else:
-            show_chart()  # İlk açılışta göster
-
+            show_chart()
     except Exception as e:
         messagebox.showerror("Hata (Auto Refresh)", f"{type(e).__name__}: {e}")
     globals.refresh_job = globals.root.after(1000, auto_refresh_chart)
