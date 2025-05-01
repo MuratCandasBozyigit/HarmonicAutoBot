@@ -1,29 +1,29 @@
 ﻿import tkinter as tk
 import customtkinter as ctk
+import threading
 import time
-import Gui
+
+import Gui  # loadingFrame burada
 import Utils.globals as globals
 
-def setup_globals():
-    globals.root = None 
+def start_app():
+    # Build GUI işlemini ayrı bir thread ile yap
+    def init():
+        Gui.build_gui(globals.root)  # Ağır işlemler burada
+        loading.stop_loading()       # Her şey hazırsa yükleniyor ekranı kapat
+        globals.root.deiconify()     # Ana pencereyi göster
 
-def show_main_frame():
-    Gui.build_gui(globals.root)
+    threading.Thread(target=init).start()
 
 if __name__ == "__main__":
-    setup_globals()
+    ctk.set_appearance_mode("light")
+    ctk.set_default_color_theme("blue")
+
     root = tk.Tk()
-    root.withdraw()  # İlk başta gizle (loading ekranı çıkana kadar)
-
+    root.withdraw()  # Ana pencereyi başta gizle
     globals.root = root
-    loading = Gui.loadingFrame(root)
 
-    # loading ekranında işlemler yapabilirsin, örnek olarak bekletiyoruz
-    root.after(50, lambda: print("Veri çekiliyor..."))
-    root.after(6000, lambda: (
-        loading.stop_loading(),
-        root.deiconify(),   # Ana pencereyi tekrar göster
-        show_main_frame()
-    ))
+    loading = Gui.loadingFrame(root)  # Yükleniyor ekranı göster
+    start_app()  # Uygulama başlatma işlemi başlasın
 
     root.mainloop()
