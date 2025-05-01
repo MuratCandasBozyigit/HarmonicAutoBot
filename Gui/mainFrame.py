@@ -3,6 +3,8 @@ import pandas as pd
 import mplfinance as mpf
 import customtkinter as ctk
 from tkinter import ttk
+import customtkinter as ctk
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from datetime import datetime
 
