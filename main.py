@@ -10,26 +10,27 @@ def start_app():
     def init():
         # Ağır işlem yapılacaksa burada (sadece hesaplama, GUI değil)
         time.sleep(2)  # Simülasyon (gerçek hayatta veri çekme olabilir)
-
-        # build_gui GUI öğelerine dokunduğu için ana thread'e alınmalı
-        globals.root.after(0, finish_init)
+        
+        # Ağır işlem bittiğinde GUI'yi ana thread üzerinde güncellemek için finish_init'i çağırıyoruz.
+        globals.root.after(0, finish_init)  # Ana thread üzerinde GUI işlemi
 
     def finish_init():
         Gui.build_gui(globals.root)
-        loading.stop_loading()
-        globals.root.deiconify()
+        loading.stop_loading()  # Yükleniyor ekranını kapat
+        globals.root.deiconify()  # Ana pencereyi göster
 
-    threading.Thread(target=init).start()
+    # Başka bir thread üzerinde init fonksiyonunu çalıştırıyoruz.
+    threading.Thread(target=init, daemon=True).start()
 
 if __name__ == "__main__":
     ctk.set_appearance_mode("light")
     ctk.set_default_color_theme("blue")
 
     root = tk.Tk()
-    root.withdraw()
+    root.withdraw()  # Ana pencereyi başta gizle
     globals.root = root
 
-    loading = Gui.loadingFrame(root)  # Loading ekranını göster
+    loading = Gui.loadingFrame(root)  # Yükleniyor ekranını göster
     start_app()  # Arka planda işlem başlasın
 
-    root.mainloop()
+    root.mainloop()  # Tkinter ana döngüsü
