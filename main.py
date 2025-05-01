@@ -19,8 +19,8 @@ if __name__ == "__main__":
     loading = Gui.loadingFrame(root)
 
     # loading ekranında işlemler yapabilirsin, örnek olarak bekletiyoruz
-    root.after(100, lambda: print("Veri çekiliyor..."))
-    root.after(3000, lambda: (
+    root.after(50, lambda: print("Veri çekiliyor..."))
+    root.after(6000, lambda: (
         loading.stop_loading(),
         root.deiconify(),   # Ana pencereyi tekrar göster
         show_main_frame()
