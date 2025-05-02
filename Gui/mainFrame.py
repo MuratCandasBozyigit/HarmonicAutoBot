@@ -75,7 +75,7 @@ def build_gui(root):
     ToolTip(btn_ekle, "Coini Listeye Ekle")
 
     def add_coin_to_list():
-        coin = globals.symbol_var.get()
+        coin = globals.symbol_var.get().upper()
         if not coin:
             return
         path = "coins.json"
@@ -88,7 +88,6 @@ def build_gui(root):
             coins.append(coin)
             with open(path, "w") as f:
                 json.dump(coins, f)
-            print(f"{coin} coins.json dosyasına eklendi.")
             
             # Bildirim ekleme
             show_notification(f"{coin} başarıyla listeye eklendi!")
@@ -178,8 +177,9 @@ def build_gui(root):
                 btn.pack(side="left", padx=2)
 
     def coin_button_clicked(coin):
-        globals.symbol_var.set(coin)
+        globals.symbol_var.set(coin.upper())  # Coini büyük harfe dönüştür
         Chart.show_chart()
+
 
     # Otomatik grafik yenileme başlat
     Chart.auto_refresh_chart()
