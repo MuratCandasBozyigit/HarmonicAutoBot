@@ -16,8 +16,8 @@ class CustomMessageBox(ctk.CTkToplevel):
 def open_settings_window(root):
     win = ctk.CTkToplevel(root)
     win.title("⚙️ Ayarlar")
-    win.geometry("400x500")
-    win.resizable(False, False)
+    win.geometry("400x620")
+    win.resizable(False, True)
     win.grab_set()
 
     # Etiket ve girişler
@@ -35,6 +35,16 @@ def open_settings_window(root):
     leverage_entry = ctk.CTkEntry(win, width=100)
     leverage_entry.insert(0, str(globals.leverage))
     leverage_entry.pack()
+   
+    ctk.CTkLabel(win, text="Take Profit (%)").pack(pady=5)
+    tp_entry = ctk.CTkEntry(win, width=100)
+    tp_entry.insert(0, str(globals.tp_percent))
+    tp_entry.pack()
+
+    ctk.CTkLabel(win, text="Stop Loss (%)").pack(pady=5)
+    sl_entry = ctk.CTkEntry(win, width=100)
+    sl_entry.insert(0, str(globals.sl_percent))
+    sl_entry.pack()
 
     ctk.CTkLabel(win, text="Pozisyon Tutarı (USDT):").pack(pady=5)
     usdt_entry = ctk.CTkEntry(win, width=100)
@@ -61,6 +71,9 @@ def open_settings_window(root):
         set_key(".env", "LEVERAGE", leverage_entry.get())
         set_key(".env", "USDT_AMOUNT", usdt_entry.get())
         set_key(".env", "USE_TESTNET", str(use_testnet_var.get()))
+        set_key(".env", "TP_PERCENT", tp_entry.get())
+        set_key(".env", "SL_PERCENT", sl_entry.get())
+
         globals.update_globals()
         CustomMessageBox(win, title="Başarılı", message="✅ Ayarlar başarıyla kaydedildi.")
 
