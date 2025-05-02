@@ -40,44 +40,55 @@ def build_gui(root):
     container_frame = ctk.CTkFrame(root)
     container_frame.pack(fill="both", expand=True)
 
-    # Sol Panel
-    left_panel = ctk.CTkFrame(container_frame, fg_color="#2A2E3B", width=200)
+    # Sol panel (arka plan kaldırıldı)
+    left_panel = ctk.CTkFrame(container_frame, fg_color="transparent", width=200)
     left_panel.pack(side="left", fill="y")
 
-    # Grafik Alanı
+    # Grafik alanı
     chart_frame = ctk.CTkFrame(container_frame, fg_color="gray")
     chart_frame.pack(side="left", fill="both", expand=True)
     globals.chart_frame = chart_frame
 
     globals.should_auto_refresh = ctk.BooleanVar(value=True)
 
-    # Coin girişi
+    # Coin Label
     ctk.CTkLabel(left_panel, text="Coin (BTC vs):").pack(pady=(10, 0))
+
+    # Coin input + Göster butonu (yan yana)
+    coin_input_row = ctk.CTkFrame(left_panel, fg_color="transparent")
+    coin_input_row.pack(pady=(0, 5))
+
     globals.symbol_var = ctk.StringVar(value="BTC")
-    symbol_entry = ctk.CTkEntry(left_panel, textvariable=globals.symbol_var, width=120)
-    symbol_entry.pack(pady=(0, 10))
+    symbol_entry = ctk.CTkEntry(coin_input_row, textvariable=globals.symbol_var, width=100)
+    symbol_entry.pack(side="left", padx=(0, 5))
     symbol_entry.bind("<FocusIn>", Chart.pause_refresh)
     symbol_entry.bind("<FocusOut>", Chart.resume_refresh)
     symbol_entry.bind("<Return>", lambda e: [Chart.show_chart(), Chart.resume_refresh(e)])
 
-    # Zaman Dilimi Seçimi
+    btn_goster = ctk.CTkButton(coin_input_row, text="📊", width=40,
+                               command=lambda: [Chart.show_chart(), Chart.resume_refresh(None)])
+    btn_goster.pack(side="left")
+    ToolTip(btn_goster, "Grafiği Göster")
+
+    # Zaman dilimi başlığı
     ctk.CTkLabel(left_panel, text="Zaman Dilimi:").pack(pady=(10, 5))
     globals.timeframe_var = ctk.StringVar(value="15m")
-    timeframes = ["1m", "5m", "15m", "1h", "4h", "1d"]
-    button_grid_frame = ctk.CTkFrame(left_panel)
-    button_grid_frame.pack(pady=(0, 10))
 
+    # Zaman dilimi butonları 3-3-2
+    timeframes = ["1m", "5m", "15m", "1h", "4h", "1d"]
     def select_timeframe(tf):
         globals.timeframe_var.set(tf)
         Chart.show_chart()
 
-    for i, tf in enumerate(timeframes):
-        btn = ctk.CTkButton(button_grid_frame, text=tf, width=50, height=30,
-                            command=lambda tf=tf: select_timeframe(tf))
-        row, col = divmod(i, 3)
-        btn.grid(row=row, column=col, padx=6, pady=6)
+    for i in range(0, len(timeframes), 3):
+        row = ctk.CTkFrame(left_panel, fg_color="transparent")
+        row.pack(pady=(0, 6))
+        for tf in timeframes[i:i+3]:
+            btn = ctk.CTkButton(row, text=tf, width=40, height=30,
+                                command=lambda tf=tf: select_timeframe(tf))
+            btn.pack(side="left", padx=3)
 
-    # Mum sayısı seçimi
+    # Mum sayısı
     ctk.CTkLabel(left_panel, text="Mum Sayısı:").pack()
     globals.limit_var = ctk.StringVar(value="20")
     limit_combo = ctk.CTkComboBox(left_panel, variable=globals.limit_var,
@@ -85,46 +96,44 @@ def build_gui(root):
                                   command=lambda _: Chart.show_chart())
     limit_combo.pack(pady=(0, 10))
 
-    # Grafik gösterme butonu
-    btn_goster = ctk.CTkButton(left_panel, text="📊", width=40,
-                               command=lambda: [Chart.show_chart(), Chart.resume_refresh(None)])
-    btn_goster.pack(pady=5)
-    ToolTip(btn_goster, "Grafiği Göster")
-
-    # Hızlı İşlem Butonları
-    btn_long = ctk.CTkButton(left_panel, text="🚀", width=40, command=Order.execute_trade)
-    btn_long.pack(pady=5)
+    # Hızlı işlemler (yan yana)
+    quick_row = ctk.CTkFrame(left_panel, fg_color="transparent")
+    quick_row.pack(pady=5)
+    btn_long = ctk.CTkButton(quick_row, text="🚀", width=70, command=Order.execute_trade)
+    btn_long.pack(side="left", padx=5)
     ToolTip(btn_long, "Hızlı Long Aç")
-
-    btn_short = ctk.CTkButton(left_panel, text="🛑", width=40, command=Order.execute_short_trade)
-    btn_short.pack(pady=5)
+    btn_short = ctk.CTkButton(quick_row, text="🛑", width=70, command=Order.execute_short_trade)
+    btn_short.pack(side="left", padx=5)
     ToolTip(btn_short, "Hızlı Short Aç")
 
-    # --- Switch Satırı: Long & Short ---
-    emir_switch_row = ctk.CTkFrame(left_panel)
-    emir_switch_row.pack(pady=(10, 0))
+    # Long / Short Emir Ara Switchleri (aynı satırda)
+    emir_row = ctk.CTkFrame(left_panel, fg_color="transparent")
+    emir_row.pack(pady=5)
 
-    globals.emir_acik_var = ctk.BooleanVar(value=False)
-    globals.short_emir_acik_var = ctk.BooleanVar(value=False)
+    long_switch = ctk.CTkSwitch(emir_row, text="📈 Long Emir", command=lambda: toggle_long_emir())
+    long_switch.pack(side="left", padx=5)
+    short_switch = ctk.CTkSwitch(emir_row, text="📉 Short Emir", command=lambda: toggle_short_emir())
+    short_switch.pack(side="left", padx=5)
 
-    long_switch = ctk.CTkSwitch(emir_switch_row, text="📈 Long", variable=globals.emir_acik_var)
-    long_switch.pack(side="left", padx=10)
+    def toggle_long_emir():
+        globals.emir_acik = not globals.emir_acik
 
-    short_switch = ctk.CTkSwitch(emir_switch_row, text="📉 Short", variable=globals.short_emir_acik_var)
-    short_switch.pack(side="left", padx=10)
+    def toggle_short_emir():
+        globals.short_emir_acik = not globals.short_emir_acik
 
-    # --- Alt Satır: Oto Yenileme & Ayar Butonu ---
-    control_row = ctk.CTkFrame(left_panel)
-    control_row.pack(pady=10)
+    # Oto yenileme + Ayarlar (aynı satırda)
+    bottom_row = ctk.CTkFrame(left_panel, fg_color="transparent")
+    bottom_row.pack(pady=5)
 
-    refresh_switch = ctk.CTkSwitch(control_row, text="🔄 Oto", variable=globals.should_auto_refresh)
-    refresh_switch.pack(side="left", padx=10)
+    refresh_switch = ctk.CTkSwitch(bottom_row, text="🔄 Oto Yenile", variable=globals.should_auto_refresh)
+    refresh_switch.pack(side="left", padx=5)
 
-    btn_settings = ctk.CTkButton(control_row, text="⚙️", width=40, command=lambda: open_settings_window(root))
-    btn_settings.pack(side="left", padx=10)
+    btn_settings = ctk.CTkButton(bottom_row, text="⚙️", width=40,
+                                 command=lambda: open_settings_window(root))
+    btn_settings.pack(side="left", padx=5)
     ToolTip(btn_settings, "Ayarları Aç")
 
-    # Otomatik grafik yenileme
+    # Otomatik grafik yenileme başlat
     Chart.auto_refresh_chart()
 
 
