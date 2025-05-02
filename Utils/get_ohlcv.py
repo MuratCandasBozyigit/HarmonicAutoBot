@@ -34,5 +34,5 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300, cooldown=1.0):
         return df if not df.empty else None
     except Exception as e:
         msg = f"Veri alınamadı:\n{str(e)}"
-        print(f"[HATA: OHLCV] {msg}") if getattr(globals, "debug", False) else show_error("Hata", msg)
+      #  print(f"[HATA: OHLCV] {msg}") if getattr(globals, "debug", False) else show_error("Hata", msg)
         return None
