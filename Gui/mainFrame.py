@@ -161,8 +161,8 @@ def build_gui(root):
         globals.symbol_var.set(coin)
         Chart.show_chart()
 
-    max_per_row = 7
-    for i in range(0, min(len(coins), 21), max_per_row):
+    max_per_row = 5
+    for i in range(0, min(len(coins), 20), max_per_row):
         row = ctk.CTkFrame(coin_frame, fg_color="transparent")
         row.pack(pady=2)
         for coin in coins[i:i+max_per_row]:
