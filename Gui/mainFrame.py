@@ -97,7 +97,7 @@ def build_gui(root):
     limit_combo.pack(pady=(0, 15))  # Aradaki boşluğu artırdık
 
     # Hızlı işlemler (yan yana)
-    quick_row = ctk.CTkFrame(left_panel, fg_color="transparent")
+    quick_row = ctk.CTkFrame(left_panel, fg_color="transparent") 
     quick_row.pack(pady=(10, 5))
     btn_long = ctk.CTkButton(quick_row, text="🚀", width=70, command=Order.execute_trade)
     btn_long.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
