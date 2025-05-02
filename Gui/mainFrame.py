@@ -143,6 +143,20 @@ def build_gui(root):
 
     def toggle_short_emir():
         globals.short_emir_acik = not globals.short_emir_acik
+        # İşlem çarpanı seçimi
+    ctk.CTkLabel(left_panel, text="İşlem Çarpanı:").pack(pady=(5, 0))
+    globals.multiplier_var = ctk.IntVar(value=1)
+
+    multiplier_row = ctk.CTkFrame(left_panel, fg_color="transparent")
+    multiplier_row.pack(pady=(5, 10))
+
+    def set_multiplier(val):
+        globals.multiplier_var.set(val)
+
+    for val in [1, 2, 4, 6, 8, 16]:
+        btn = ctk.CTkButton(multiplier_row, text=f"{val}x", width=40,
+                            command=lambda v=val: set_multiplier(v))
+        btn.pack(side="left", padx=3)
 
     # Oto yenileme ve ayar butonu
     bottom_row = ctk.CTkFrame(left_panel, fg_color="transparent")
