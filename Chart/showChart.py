@@ -25,12 +25,16 @@ def show_chart(event=None):
         messagebox.showwarning("Uyarı", "Coin ve zaman dilimi girilmedi.")
         return
 
-    df = Utils.get_ohlcv(symbol, timeframe, limit=globals.limit_var.get())
+    #df = Utils.get_ohlcv(symbol, timeframe, limit=globals.limit_var.get())
+    df = Utils.get_ohlcv(symbol, timeframe, limit=int(globals.limit_var.get()))
+
     if df is None or df.empty:
         messagebox.showwarning("Uyarı", "Veri alınamadı.")
         return
 
-    df = df.dropna().iloc[-globals.limit_var.get():]
+    #df = df.dropna().iloc[-globals.limit_var.get():]
+    df = df.dropna().iloc[-int(globals.limit_var.get()):]
+
     globals.df = df
     globals.symbol = symbol
     globals.timeframe = timeframe
