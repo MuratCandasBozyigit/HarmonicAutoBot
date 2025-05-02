@@ -75,6 +75,7 @@ fig = None
 ax = None
 symbol = None
 timeframe = None
+multiplier_var = None
 
 tp_percent = 0.7  # Take Profit yüzdesi
 sl_percent = 1.5  # Stop Loss yüzdesi
