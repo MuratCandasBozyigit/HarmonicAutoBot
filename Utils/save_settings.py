@@ -20,7 +20,7 @@ def open_settings_window(root):
     win.resizable(False, True)
     win.grab_set()
 
-    # Etiket ve girişler
+    # API Bilgileri
     ctk.CTkLabel(win, text="Binance API Key:").pack(pady=5)
     api_key_entry = ctk.CTkEntry(win, width=300)
     api_key_entry.insert(0, globals.api_key)
@@ -31,32 +31,52 @@ def open_settings_window(root):
     api_secret_entry.insert(0, globals.api_secret)
     api_secret_entry.pack()
 
-    ctk.CTkLabel(win, text="Kaldıraç (Örn: 10):").pack(pady=5)
-    leverage_entry = ctk.CTkEntry(win, width=100)
+    # 2x2 Grid: Kaldıraç, USDT, TP, SL
+    grid_frame = ctk.CTkFrame(win, fg_color="transparent")
+    grid_frame.pack(pady=10)
+
+    # 1. Satır
+    row1 = ctk.CTkFrame(grid_frame, fg_color="transparent")
+    row1.pack(pady=5)
+
+    col1_1 = ctk.CTkFrame(row1, fg_color="transparent")
+    col1_1.pack(side="left", padx=10)
+    ctk.CTkLabel(col1_1, text="Kaldıraç (Örn: 10):").pack()
+    leverage_entry = ctk.CTkEntry(col1_1, width=100)
     leverage_entry.insert(0, str(globals.leverage))
     leverage_entry.pack()
-   
-    ctk.CTkLabel(win, text="Pozisyon Tutarı (USDT):").pack(pady=5)
-    usdt_entry = ctk.CTkEntry(win, width=100)
+
+    col1_2 = ctk.CTkFrame(row1, fg_color="transparent")
+    col1_2.pack(side="left", padx=10)
+    ctk.CTkLabel(col1_2, text="Pozisyon Tutarı (USDT):").pack()
+    usdt_entry = ctk.CTkEntry(col1_2, width=100)
     usdt_entry.insert(0, str(globals.usdt_amount))
     usdt_entry.pack()
 
-    ctk.CTkLabel(win, text="Take Profit (%)").pack(pady=5)
-    tp_entry = ctk.CTkEntry(win, width=100)
+    # 2. Satır
+    row2 = ctk.CTkFrame(grid_frame, fg_color="transparent")
+    row2.pack(pady=5)
+
+    col2_1 = ctk.CTkFrame(row2, fg_color="transparent")
+    col2_1.pack(side="left", padx=10)
+    ctk.CTkLabel(col2_1, text="Take Profit (%):").pack()
+    tp_entry = ctk.CTkEntry(col2_1, width=100)
     tp_entry.insert(0, str(globals.tp_percent))
     tp_entry.pack()
 
-    ctk.CTkLabel(win, text="Stop Loss (%)").pack(pady=5)
-    sl_entry = ctk.CTkEntry(win, width=100)
+    col2_2 = ctk.CTkFrame(row2, fg_color="transparent")
+    col2_2.pack(side="left", padx=10)
+    ctk.CTkLabel(col2_2, text="Stop Loss (%):").pack()
+    sl_entry = ctk.CTkEntry(col2_2, width=100)
     sl_entry.insert(0, str(globals.sl_percent))
     sl_entry.pack()
 
-   
-
+    # Testnet Switch
     ctk.CTkLabel(win, text="Testnet Modu:").pack(pady=5)
     use_testnet_var = ctk.BooleanVar(value=globals.use_testnet)
     ctk.CTkSwitch(win, text="Testnet'i Kullan", variable=use_testnet_var).pack()
 
+    # Tema Seçimi
     ctk.CTkLabel(win, text="Tema Seç:").pack(pady=5)
     theme_var = ctk.StringVar(value=ctk.get_appearance_mode())
     theme_option = ctk.CTkOptionMenu(win, variable=theme_var, values=["Light", "Dark", "System"])
@@ -79,5 +99,6 @@ def open_settings_window(root):
         globals.update_globals()
         CustomMessageBox(win, title="Başarılı", message="✅ Ayarlar başarıyla kaydedildi.")
 
+    # Butonlar
     ctk.CTkButton(win, text="Temayı Uygula", command=apply_theme).pack(pady=10)
     ctk.CTkButton(win, text="Kaydet ve Kapat", command=lambda: [save_settings(), win.destroy()]).pack(pady=10)
