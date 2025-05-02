@@ -17,10 +17,10 @@ from Utils.tooltip import ToolTip
 from Utils.save_settings import open_settings_window
 
 path = "coins.json"
+
 def toggle_theme():
     current = ctk.get_appearance_mode()
     ctk.set_appearance_mode("light" if current == "dark" else "dark")
-
 
 def build_gui(root):
     globals.root = root
@@ -180,14 +180,13 @@ def build_gui(root):
         globals.symbol_var.set(coin.upper())  # Coini büyük harfe dönüştür
         Chart.show_chart()
 
-
     # Otomatik grafik yenileme başlat
     Chart.auto_refresh_chart()
 
     def show_notification(message):
-        # Ekrana kısa bildirim ekleyelim
-        notification_label = ctk.CTkLabel(root, text=message, fg_color="green", width=300, height=30)
-        notification_label.place(relx=0.5, rely=0.95, anchor="center")
+        # Sol menüde en altta bildirim ekleyelim
+        notification_label = ctk.CTkLabel(left_panel, text=message.upper(), fg_color="green", width=300, height=30)
+        notification_label.place(relx=0.5, rely=1.0, anchor="s", y=-10)  # Alt merkezde konumlandır, y=-10 ile biraz yukarı al
         root.after(3000, notification_label.destroy)  # 3 saniye sonra kaybolacak
 
     refresh_coin_buttons()
