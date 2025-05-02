@@ -8,7 +8,7 @@ import Utils.globals as globals
 def start_app():
     def init():
         # Ağır işlem yapılacaksa burada (örneğin veri çekme)
-        time.sleep(2)
+        time.sleep(3)
         globals.root.after(0, finish_init)
 
     def finish_init():
