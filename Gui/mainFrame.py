@@ -174,7 +174,9 @@ def build_gui(root):
             row = ctk.CTkFrame(coin_frame, fg_color="transparent")
             row.pack(pady=2)
             for coin in coins[i:i+max_per_row]:
-                btn = ctk.CTkButton(row, text=coin, width=45, height=30)
+                #btn = ctk.CTkButton(row, text=coin, width=45, height=30)
+                btn = ctk.CTkButton(row, text=coin, width=45, height=30, command=lambda c=coin: coin_button_clicked(c))
+
                 btn.pack(side="left", padx=2)
 
                 # Sağ tıklama menüsü için
