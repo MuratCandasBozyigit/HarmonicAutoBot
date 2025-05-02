@@ -125,6 +125,59 @@ def build_gui(root):
     bottom_row = ctk.CTkFrame(left_panel, fg_color="transparent")
     bottom_row.pack(pady=(15, 5))  # Aradaki boşluğu artırdık
 
+        # Coin Listesi Başlığı
+    ctk.CTkLabel(left_panel, text="Coin Listesi").pack(pady=(20, 5))
+
+    # Coin listesi kutusu
+    coin_list = ctk.CTkTextbox(left_panel, height=120, width=180, state="disabled")
+    coin_list.pack(pady=(0, 5))
+    globals.coin_list_data = []  # Liste verisini globalde tut
+
+    # Coin ekleme/silme satırı
+    coin_edit_row = ctk.CTkFrame(left_panel, fg_color="transparent")
+    coin_edit_row.pack(pady=5)
+
+    coin_entry_var = ctk.StringVar()
+    coin_entry = ctk.CTkEntry(coin_edit_row, textvariable=coin_entry_var, width=90, placeholder_text="BTC/USDT")
+    coin_entry.pack(side="left", padx=(0, 5))
+
+    def add_coin():
+        coin = coin_entry_var.get().strip().upper()
+        if coin and coin not in globals.coin_list_data:
+            globals.coin_list_data.append(coin)
+            update_coin_list()
+
+    def remove_coin():
+        coin = coin_entry_var.get().strip().upper()
+        if coin in globals.coin_list_data:
+            globals.coin_list_data.remove(coin)
+            update_coin_list()
+
+    add_btn = ctk.CTkButton(coin_edit_row, text="+", width=30, command=add_coin)
+    add_btn.pack(side="left", padx=(0, 2))
+
+    remove_btn = ctk.CTkButton(coin_edit_row, text="-", width=30, command=remove_coin)
+    remove_btn.pack(side="left", padx=(2, 0))
+
+    def update_coin_list():
+        coin_list.configure(state="normal")
+        coin_list.delete("0.0", "end")
+        for coin in globals.coin_list_data:
+            coin_list.insert("end", coin + "\n")
+        coin_list.configure(state="disabled")
+
+    # Coin'e tıklanınca seçip grafik göster
+    def on_coin_click(event):
+        index = coin_list.index(f"@{event.x},{event.y}")
+        line_number = int(index.split(".")[0])
+        if 0 < line_number <= len(globals.coin_list_data):
+            coin = globals.coin_list_data[line_number - 1]
+            globals.symbol_var.set(coin.replace("/USDT", ""))
+            Chart.show_chart()
+
+    coin_list.bind("<Button-1>", on_coin_click)
+
+
     refresh_switch = ctk.CTkSwitch(bottom_row, text="🔄 Oto Yenile", variable=globals.should_auto_refresh)
     refresh_switch.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
 
