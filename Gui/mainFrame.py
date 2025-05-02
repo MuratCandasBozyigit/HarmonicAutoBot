@@ -6,6 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from datetime import datetime
 import json
 import os
+import tkinter as tk
 
 # Dahili modüller
 import Indicators
@@ -173,20 +174,41 @@ def build_gui(root):
             row = ctk.CTkFrame(coin_frame, fg_color="transparent")
             row.pack(pady=2)
             for coin in coins[i:i+max_per_row]:
-                btn = ctk.CTkButton(row, text=coin, width=45, height=30, command=lambda c=coin: coin_button_clicked(c))
+                btn = ctk.CTkButton(row, text=coin, width=45, height=30)
                 btn.pack(side="left", padx=2)
+
+                # Sağ tıklama menüsü için
+                def on_right_click(event, coin=coin):
+                    menu = tk.Menu(root, tearoff=False)  # Tkinter'ın standart Menu widget'ını kullanıyoruz
+                    menu.add_command(label="Sil", command=lambda: delete_coin(coin))
+                    menu.post(event.x_root, event.y_root)
+
+                btn.bind("<Button-3>", on_right_click)
 
     def coin_button_clicked(coin):
         globals.symbol_var.set(coin.upper())  # Coini büyük harfe dönüştür
         Chart.show_chart()
 
+    def delete_coin(coin):
+        # Coin silme işlemi
+        path = "coins.json"
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                coins = json.load(f)
+            if coin in coins:
+                coins.remove(coin)
+                with open(path, "w") as f:
+                    json.dump(coins, f)
+                show_notification(f"{coin} başarıyla silindi!")
+                refresh_coin_buttons()  # Butonları yenile
+
     # Otomatik grafik yenileme başlat
     Chart.auto_refresh_chart()
 
     def show_notification(message):
-        # Sol menüde en altta bildirim ekleyelim
-        notification_label = ctk.CTkLabel(left_panel, text=message.upper(), fg_color="green", width=300, height=30)
-        notification_label.place(relx=0.5, rely=1.0, anchor="s", y=-10)  # Alt merkezde konumlandır, y=-10 ile biraz yukarı al
+        # Ekrana kısa bildirim ekleyelim
+        notification_label = ctk.CTkLabel(root, text=message, fg_color="green", width=300, height=30)
+        notification_label.place(relx=0.5, rely=0.95, anchor="center")
         root.after(3000, notification_label.destroy)  # 3 saniye sonra kaybolacak
 
     refresh_coin_buttons()
