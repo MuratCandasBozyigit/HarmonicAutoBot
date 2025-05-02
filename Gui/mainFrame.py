@@ -117,7 +117,7 @@ def build_gui(root):
 
     def toggle_long_emir():
         globals.emir_acik = not globals.emir_acik
-         
+
     def toggle_short_emir():
         globals.short_emir_acik = not globals.short_emir_acik
 
