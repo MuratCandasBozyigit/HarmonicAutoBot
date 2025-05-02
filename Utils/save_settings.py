@@ -36,6 +36,11 @@ def open_settings_window(root):
     leverage_entry.insert(0, str(globals.leverage))
     leverage_entry.pack()
    
+    ctk.CTkLabel(win, text="Pozisyon Tutarı (USDT):").pack(pady=5)
+    usdt_entry = ctk.CTkEntry(win, width=100)
+    usdt_entry.insert(0, str(globals.usdt_amount))
+    usdt_entry.pack()
+
     ctk.CTkLabel(win, text="Take Profit (%)").pack(pady=5)
     tp_entry = ctk.CTkEntry(win, width=100)
     tp_entry.insert(0, str(globals.tp_percent))
@@ -46,10 +51,7 @@ def open_settings_window(root):
     sl_entry.insert(0, str(globals.sl_percent))
     sl_entry.pack()
 
-    ctk.CTkLabel(win, text="Pozisyon Tutarı (USDT):").pack(pady=5)
-    usdt_entry = ctk.CTkEntry(win, width=100)
-    usdt_entry.insert(0, str(globals.usdt_amount))
-    usdt_entry.pack()
+   
 
     ctk.CTkLabel(win, text="Testnet Modu:").pack(pady=5)
     use_testnet_var = ctk.BooleanVar(value=globals.use_testnet)
