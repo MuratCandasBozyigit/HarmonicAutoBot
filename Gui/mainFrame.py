@@ -60,13 +60,22 @@ def build_gui(root):
     symbol_entry.bind("<FocusOut>", Chart.resume_refresh)
     symbol_entry.bind("<Return>", lambda e: [Chart.show_chart(), Chart.resume_refresh(e)])
 
-    # Timeframe selection
-    ctk.CTkLabel(left_panel, text="Zaman Dilimi:").pack()
+     # Timeframe selection with buttons
+    ctk.CTkLabel(left_panel, text="Zaman Dilimi:").pack(pady=(10, 5))
     globals.timeframe_var = ctk.StringVar(value="15m")
-    timeframe_combo = ctk.CTkComboBox(left_panel, variable=globals.timeframe_var,
-                                      values=["1m", "5m", "15m", "1h", "4h", "1d"],
-                                      command=lambda _: Chart.show_chart())
-    timeframe_combo.pack(pady=(0, 10))
+
+    timeframes = ["1m", "5m", "15m", "1h", "4h", "1d"]
+    button_frame = ctk.CTkFrame(left_panel)
+    button_frame.pack(pady=(0, 10))
+
+    def select_timeframe(tf):
+        globals.timeframe_var.set(tf)
+        Chart.show_chart()
+
+    for tf in timeframes:
+        btn = ctk.CTkButton(button_frame, text=tf, width=40, height=30,
+                            command=lambda tf=tf: select_timeframe(tf))
+        btn.pack(side="left", padx=2)
 
     # Bar count selection
     ctk.CTkLabel(left_panel, text="Mum Sayısı:").pack()
