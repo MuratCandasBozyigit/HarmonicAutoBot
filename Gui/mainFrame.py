@@ -158,7 +158,13 @@ def build_gui(root):
                             command=lambda v=val: set_multiplier(v))
         btn.pack(side="left", padx=3)
 
-    # Oto yenileme ve ayar butonu
+  
+
+    # Coin butonları (3 sıra x 7 coin)
+    coin_frame = ctk.CTkFrame(left_panel, fg_color="transparent")
+    coin_frame.pack(pady=(15, 10))
+
+      # Oto yenileme ve ayar butonu
     bottom_row = ctk.CTkFrame(left_panel, fg_color="transparent")
     bottom_row.pack(pady=(15, 5))
     refresh_switch = ctk.CTkSwitch(bottom_row, text="🔄 Oto Yenile", variable=globals.should_auto_refresh)
@@ -166,11 +172,6 @@ def build_gui(root):
     btn_settings = ctk.CTkButton(bottom_row, text="⚙️", width=40, command=lambda: open_settings_window(root))
     btn_settings.pack(side="left", padx=10)
     ToolTip(btn_settings, "Ayarları Aç")
-
-    # Coin butonları (3 sıra x 7 coin)
-    coin_frame = ctk.CTkFrame(left_panel, fg_color="transparent")
-    coin_frame.pack(pady=(15, 10))
-
     def refresh_coin_buttons():
         # Coin butonlarını yenile
         for widget in coin_frame.winfo_children():
