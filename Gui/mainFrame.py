@@ -16,7 +16,7 @@ import Chart
 from Utils.tooltip import ToolTip
 from Utils.save_settings import open_settings_window
 
-
+path = "coins.json"
 def toggle_theme():
     current = ctk.get_appearance_mode()
     ctk.set_appearance_mode("light" if current == "dark" else "dark")
@@ -89,6 +89,12 @@ def build_gui(root):
             with open(path, "w") as f:
                 json.dump(coins, f)
             print(f"{coin} coins.json dosyasına eklendi.")
+            
+            # Bildirim ekleme
+            show_notification(f"{coin} başarıyla listeye eklendi!")
+
+            # Coin butonlarını yenile
+            refresh_coin_buttons()
 
     # Zaman dilimi
     ctk.CTkLabel(left_panel, text="Zaman Dilimi:").pack(pady=(10, 5))
@@ -150,24 +156,38 @@ def build_gui(root):
     # Coin butonları (3 sıra x 7 coin)
     coin_frame = ctk.CTkFrame(left_panel, fg_color="transparent")
     coin_frame.pack(pady=(15, 10))
-    path = "coins.json"
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            coins = json.load(f)
-    else:
-        coins = []
+
+    def refresh_coin_buttons():
+        # Coin butonlarını yenile
+        for widget in coin_frame.winfo_children():
+            widget.destroy()  # Önce eski butonları temizle
+        
+        # Yeniden coin butonları oluştur
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                coins = json.load(f)
+        else:
+            coins = []
+
+        max_per_row = 5
+        for i in range(0, min(len(coins), 20), max_per_row):
+            row = ctk.CTkFrame(coin_frame, fg_color="transparent")
+            row.pack(pady=2)
+            for coin in coins[i:i+max_per_row]:
+                btn = ctk.CTkButton(row, text=coin, width=45, height=30, command=lambda c=coin: coin_button_clicked(c))
+                btn.pack(side="left", padx=2)
 
     def coin_button_clicked(coin):
         globals.symbol_var.set(coin)
         Chart.show_chart()
 
-    max_per_row = 5
-    for i in range(0, min(len(coins), 20), max_per_row):
-        row = ctk.CTkFrame(coin_frame, fg_color="transparent")
-        row.pack(pady=2)
-        for coin in coins[i:i+max_per_row]:
-            btn = ctk.CTkButton(row, text=coin, width=45, height=30, command=lambda c=coin: coin_button_clicked(c))
-            btn.pack(side="left", padx=2)
-
     # Otomatik grafik yenileme başlat
     Chart.auto_refresh_chart()
+
+    def show_notification(message):
+        # Ekrana kısa bildirim ekleyelim
+        notification_label = ctk.CTkLabel(root, text=message, fg_color="green", width=300, height=30)
+        notification_label.place(relx=0.5, rely=0.95, anchor="center")
+        root.after(3000, notification_label.destroy)  # 3 saniye sonra kaybolacak
+
+    refresh_coin_buttons()
