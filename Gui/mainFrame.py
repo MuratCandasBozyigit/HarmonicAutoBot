@@ -11,11 +11,14 @@ import Utils
 import Utils.globals as globals
 import Order
 import Chart
+from Utils.tooltip import ToolTip
 from Utils.save_settings import open_settings_window
+
 
 def toggle_theme():
     current = ctk.get_appearance_mode()
     ctk.set_appearance_mode("light" if current == "dark" else "dark")
+
 
 def build_gui(root):
     globals.root = root
@@ -37,83 +40,84 @@ def build_gui(root):
     container_frame = ctk.CTkFrame(root)
     container_frame.pack(fill="both", expand=True)
 
+    # Left panel
+    left_panel = ctk.CTkFrame(container_frame, fg_color="#2A2E3B", width=200)
+    left_panel.pack(side="left", fill="y")
+
+    # Chart frame
     chart_frame = ctk.CTkFrame(container_frame, fg_color="gray")
-    chart_frame.grid(row=0, column=1, sticky="nsew")
+    chart_frame.pack(side="left", fill="both", expand=True)
     globals.chart_frame = chart_frame
-
-    container_frame.grid_rowconfigure(0, weight=1)
-    container_frame.grid_columnconfigure(1, weight=1)
-
-    # Sol Panel
-    left_panel = ctk.CTkFrame(container_frame, width=240, fg_color="#1e1e1e")
-    left_panel.grid(row=0, column=0, rowspan=2, sticky="ns")
-    left_panel.grid_propagate(False)
 
     globals.should_auto_refresh = ctk.BooleanVar(value=True)
 
-    # Coin Girişi
-    ctk.CTkLabel(left_panel, text="Coin (BTC vs):", anchor="w").grid(row=0, column=0, padx=10, pady=(15, 2), sticky="w")
+    # Coin entry
+    ctk.CTkLabel(left_panel, text="Coin (BTC vs):").pack(pady=(10, 0))
     globals.symbol_var = ctk.StringVar(value="BTC")
-    symbol_entry = ctk.CTkEntry(left_panel, textvariable=globals.symbol_var)
-    symbol_entry.grid(row=1, column=0, padx=10, pady=2, sticky="ew")
+    symbol_entry = ctk.CTkEntry(left_panel, textvariable=globals.symbol_var, width=120)
+    symbol_entry.pack(pady=(0, 10))
     symbol_entry.bind("<FocusIn>", Chart.pause_refresh)
     symbol_entry.bind("<FocusOut>", Chart.resume_refresh)
     symbol_entry.bind("<Return>", lambda e: [Chart.show_chart(), Chart.resume_refresh(e)])
 
-    # === Zaman Dilimi ve Bar Sayısı Birlikte ===
-    ctk.CTkLabel(left_panel, text="Zaman Dilimi:", anchor="w").grid(row=2, column=0, padx=10, pady=(15, 2), sticky="w")
-
-    def update_chart_from_inputs(_=None):
-        Chart.pause_refresh(None)
-        Chart.show_chart()
-        Chart.resume_refresh(None)
-
+    # Timeframe selection
+    ctk.CTkLabel(left_panel, text="Zaman Dilimi:").pack()
     globals.timeframe_var = ctk.StringVar(value="15m")
-    timeframe_combo = ctk.CTkSegmentedButton(left_panel, variable=globals.timeframe_var,
-                                             values=["1m", "5m", "15m", "1h", "4h", "1d"])
-    timeframe_combo.grid(row=3, column=0, padx=10, pady=2)
-    timeframe_combo.configure(command=update_chart_from_inputs)
+    timeframe_combo = ctk.CTkComboBox(left_panel, variable=globals.timeframe_var,
+                                      values=["1m", "5m", "15m", "1h", "4h", "1d"],
+                                      command=lambda _: Chart.show_chart())
+    timeframe_combo.pack(pady=(0, 10))
 
-    ctk.CTkLabel(left_panel, text="Mum Sayısı:", anchor="w").grid(row=4, column=0, padx=10, pady=(15, 2), sticky="w")
-    globals.limit_var = ctk.IntVar(value=15)
-    bar_count_combo = ctk.CTkComboBox(left_panel, variable=globals.limit_var,
-                                      values=["15", "50", "100", "250"])
-    bar_count_combo.grid(row=5, column=0, padx=10, pady=2)
-    bar_count_combo.bind("<<ComboboxSelected>>", update_chart_from_inputs)
+    # Bar count selection
+    ctk.CTkLabel(left_panel, text="Mum Sayısı:").pack()
+    globals.limit_var = ctk.StringVar(value="20")
+    limit_combo = ctk.CTkComboBox(left_panel, variable=globals.limit_var,
+                                  values=["20", "50", "100", "250"],
+                                  command=lambda _: Chart.show_chart())
+    limit_combo.pack(pady=(0, 10))
 
-    # === Butonlar ===
-    icon_long = "🚀"
-    icon_short = "🛑"
-    icon_settings = "⚙️"
-    icon_show = "📊"
+    # Show chart button
+    btn_goster = ctk.CTkButton(left_panel, text="📊", width=40,
+                               command=lambda: [Chart.show_chart(), Chart.resume_refresh(None)])
+    btn_goster.pack(pady=5)
+    ToolTip(btn_goster, "Grafiği Göster")
 
-    ctk.CTkButton(left_panel, text=icon_long, font=("Arial", 24), height=48,
-                  command=Order.execute_trade).grid(row=6, column=0, padx=10, pady=(20, 8), sticky="ew")
+    # Auto refresh switch
+    refresh_switch = ctk.CTkSwitch(left_panel, text="🔄 Oto Yenileme", variable=globals.should_auto_refresh)
+    refresh_switch.pack(pady=5)
 
-    ctk.CTkButton(left_panel, text=icon_short, font=("Arial", 24), height=48,
-                  command=Order.execute_short_trade).grid(row=7, column=0, padx=10, pady=8, sticky="ew")
+    # Quick Long button
+    btn_long = ctk.CTkButton(left_panel, text="🚀", width=40, command=Order.execute_trade)
+    btn_long.pack(pady=5)
+    ToolTip(btn_long, "Hızlı Long Aç")
 
-    emir_btn = ctk.CTkButton(left_panel, text="🟢 Long Emir Ara", fg_color="darkgreen")
+    # Quick Short button
+    btn_short = ctk.CTkButton(left_panel, text="🛑", width=40, command=Order.execute_short_trade)
+    btn_short.pack(pady=5)
+    ToolTip(btn_short, "Hızlı Short Aç")
+
+    # Toggle Long order button
+    emir_btn = ctk.CTkButton(left_panel, text="📈", width=40, fg_color="darkgreen")
     def toggle_long_emir():
         globals.emir_acik = not globals.emir_acik
-        emir_btn.configure(text="🔴 Long Emir Arıyor..." if globals.emir_acik else "🟢 Long Emir Ara")
+        emir_btn.configure(text="🔴" if globals.emir_acik else "📈")
     emir_btn.configure(command=toggle_long_emir)
-    emir_btn.grid(row=8, column=0, padx=10, pady=8, sticky="ew")
+    emir_btn.pack(pady=5)
+    ToolTip(emir_btn, "Long Emir Ara")
 
-    short_emir_btn = ctk.CTkButton(left_panel, text="🟢 Short Emir Ara", fg_color="darkred")
+    # Toggle Short order button
+    short_emir_btn = ctk.CTkButton(left_panel, text="📉", width=40, fg_color="darkred")
     def toggle_short_emir():
         globals.short_emir_acik = not globals.short_emir_acik
-        short_emir_btn.configure(text="🔴 Short Emir Arıyor..." if globals.short_emir_acik else "🟢 Short Emir Ara")
+        short_emir_btn.configure(text="🔴" if globals.short_emir_acik else "📉")
     short_emir_btn.configure(command=toggle_short_emir)
-    short_emir_btn.grid(row=9, column=0, padx=10, pady=8, sticky="ew")
+    short_emir_btn.pack(pady=5)
+    ToolTip(short_emir_btn, "Short Emir Ara")
 
-    ctk.CTkButton(left_panel, text=icon_show + " Veriyi Göster",
-                  command=lambda: [Chart.show_chart(), Chart.resume_refresh(None)]).grid(row=10, column=0, padx=10, pady=(10, 8), sticky="ew")
+    # Settings button
+    btn_settings = ctk.CTkButton(left_panel, text="⚙️", width=40, command=lambda: open_settings_window(root))
+    btn_settings.pack(pady=5)
+    ToolTip(btn_settings, "Ayarları Aç")
 
-    ctk.CTkSwitch(left_panel, text="🔄 Oto Yenileme", variable=globals.should_auto_refresh).grid(row=11, column=0, padx=10, pady=(10, 8), sticky="ew")
-
-    ctk.CTkButton(left_panel, text=icon_settings, font=("Arial", 26), width=48,
-                  command=lambda: open_settings_window(root)).grid(row=12, column=0, padx=10, pady=(15, 10), sticky="ew")
-
-    # Grafik otomatik yenileme başlat
+    # Start auto-refresh for the chart
     Chart.auto_refresh_chart()
