@@ -42,7 +42,7 @@ def build_gui(root):
 
     # Sol panel (arka plan kaldırıldı)
     left_panel = ctk.CTkFrame(container_frame, fg_color="transparent", width=200)
-    left_panel.pack(side="left", fill="y")
+    left_panel.pack(side="left", fill="y", padx=20, pady=20)
 
     # Grafik alanı
     chart_frame = ctk.CTkFrame(container_frame, fg_color="gray")
@@ -56,7 +56,7 @@ def build_gui(root):
 
     # Coin input + Göster butonu (yan yana)
     coin_input_row = ctk.CTkFrame(left_panel, fg_color="transparent")
-    coin_input_row.pack(pady=(0, 5))
+    coin_input_row.pack(pady=(10, 5))
 
     globals.symbol_var = ctk.StringVar(value="BTC")
     symbol_entry = ctk.CTkEntry(coin_input_row, textvariable=globals.symbol_var, width=100)
@@ -67,7 +67,7 @@ def build_gui(root):
 
     btn_goster = ctk.CTkButton(coin_input_row, text="📊", width=40,
                                command=lambda: [Chart.show_chart(), Chart.resume_refresh(None)])
-    btn_goster.pack(side="left")
+    btn_goster.pack(side="left", padx=5)
     ToolTip(btn_goster, "Grafiği Göster")
 
     # Zaman dilimi başlığı
@@ -82,38 +82,38 @@ def build_gui(root):
 
     for i in range(0, len(timeframes), 3):
         row = ctk.CTkFrame(left_panel, fg_color="transparent")
-        row.pack(pady=(0, 6))
+        row.pack(pady=(0, 10))  # Aradaki boşluğu artırdık
         for tf in timeframes[i:i+3]:
             btn = ctk.CTkButton(row, text=tf, width=40, height=30,
                                 command=lambda tf=tf: select_timeframe(tf))
-            btn.pack(side="left", padx=3)
+            btn.pack(side="left", padx=5)  # Aradaki boşluğu artırdık
 
     # Mum sayısı
-    ctk.CTkLabel(left_panel, text="Mum Sayısı:").pack()
+    ctk.CTkLabel(left_panel, text="Mum Sayısı:").pack(pady=(15, 5))
     globals.limit_var = ctk.StringVar(value="20")
     limit_combo = ctk.CTkComboBox(left_panel, variable=globals.limit_var,
                                   values=["20", "50", "100", "250"],
                                   command=lambda _: Chart.show_chart())
-    limit_combo.pack(pady=(0, 10))
+    limit_combo.pack(pady=(0, 15))  # Aradaki boşluğu artırdık
 
     # Hızlı işlemler (yan yana)
     quick_row = ctk.CTkFrame(left_panel, fg_color="transparent")
-    quick_row.pack(pady=5)
+    quick_row.pack(pady=(10, 5))
     btn_long = ctk.CTkButton(quick_row, text="🚀", width=70, command=Order.execute_trade)
-    btn_long.pack(side="left", padx=5)
+    btn_long.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
     ToolTip(btn_long, "Hızlı Long Aç")
     btn_short = ctk.CTkButton(quick_row, text="🛑", width=70, command=Order.execute_short_trade)
-    btn_short.pack(side="left", padx=5)
+    btn_short.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
     ToolTip(btn_short, "Hızlı Short Aç")
 
     # Long / Short Emir Ara Switchleri (aynı satırda)
     emir_row = ctk.CTkFrame(left_panel, fg_color="transparent")
-    emir_row.pack(pady=5)
+    emir_row.pack(pady=(15, 5))  # Aradaki boşluğu artırdık
 
     long_switch = ctk.CTkSwitch(emir_row, text="📈 Long Emir", command=lambda: toggle_long_emir())
-    long_switch.pack(side="left", padx=5)
+    long_switch.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
     short_switch = ctk.CTkSwitch(emir_row, text="📉 Short Emir", command=lambda: toggle_short_emir())
-    short_switch.pack(side="left", padx=5)
+    short_switch.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
 
     def toggle_long_emir():
         globals.emir_acik = not globals.emir_acik
@@ -123,17 +123,16 @@ def build_gui(root):
 
     # Oto yenileme + Ayarlar (aynı satırda)
     bottom_row = ctk.CTkFrame(left_panel, fg_color="transparent")
-    bottom_row.pack(pady=5)
+    bottom_row.pack(pady=(15, 5))  # Aradaki boşluğu artırdık
 
     refresh_switch = ctk.CTkSwitch(bottom_row, text="🔄 Oto Yenile", variable=globals.should_auto_refresh)
-    refresh_switch.pack(side="left", padx=5)
+    refresh_switch.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
 
     btn_settings = ctk.CTkButton(bottom_row, text="⚙️", width=40,
                                  command=lambda: open_settings_window(root))
-    btn_settings.pack(side="left", padx=5)
+    btn_settings.pack(side="left", padx=10)  # Aradaki boşluğu artırdık
     ToolTip(btn_settings, "Ayarları Aç")
 
     # Otomatik grafik yenileme başlat
     Chart.auto_refresh_chart()
-
 
