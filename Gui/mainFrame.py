@@ -37,10 +37,19 @@ def build_gui(root):
     exchange.set_sandbox_mode(globals.use_testnet)
     globals.exchange = exchange
 
-    image =Image.open("logo/logo.ico")
-    image = image.resize((128, 128))
-    root.display =ctk.CTkImage(light_image=image,dark_image=image)  # İkonu ayarla
-    icon = root.iconbitmap("logo/logo.ico")  # İkonu ayarla
+    # mainFrame.py içinde:
+    base_dir = os.path.dirname(__file__)                  # …/project/Gui
+    project_dir = os.path.dirname(base_dir)               # …/project
+    icon_path = os.path.join(project_dir, "logo", "logo.ico")
+    icon_path = os.path.normpath(icon_path)               # normalize eder
+
+    try:
+        img = Image.open(icon_path)
+        img = img.resize((128, 128), Image.Resampling.LANCZOS)
+        root.display = ctk.CTkImage(light_image=img, dark_image=img)
+        root.iconbitmap(icon_path)
+    except FileNotFoundError:
+        print(f"⚠️ İkon bulunamadı: {icon_path}")
 
     root.title("Auto Trade-X")
     root.geometry("1280x720")
