@@ -13,7 +13,7 @@ import Indicators
 import Utils
 import Utils.globals as globals
 import Order
-import Chart
+import Chart 
 from Utils.tooltip import ToolTip
 from Utils.save_settings import open_settings_window
 
