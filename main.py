@@ -4,6 +4,7 @@ import time
 
 import Gui  # build_gui ve loadingFrame burada
 import Utils.globals as globals
+from Utils.path_utils import resource_path  # resource_path fonksiyonunu çekiyoruz
 
 def start_app():
     def init():
@@ -22,12 +23,21 @@ if __name__ == "__main__":
     ctk.set_appearance_mode("light")
     ctk.set_default_color_theme("blue")
 
-    # Ana pencereyi oluşturuyoruz (artık CTk)
+    # Ana pencereyi oluştur
     root = ctk.CTk()
     root.withdraw()
-
     globals.root = root
-    loading = Gui.loadingFrame(root)  # CTk uyumlu loadingFrame
-    start_app()
 
+    # Logo ikonunu ayarla (build sonrası uyumlu olacak şekilde)
+    ico_path = resource_path("logo/logo.ico")
+    try:
+        root.iconbitmap(ico_path)
+    except Exception as e:
+        print("Icon yüklenemedi:", e)
+
+    # Yükleme ekranı göster
+    loading = Gui.loadingFrame(root)
+
+    # Uygulamayı başlat
+    start_app()
     root.mainloop()
