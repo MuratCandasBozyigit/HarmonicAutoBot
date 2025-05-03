@@ -7,7 +7,7 @@ from datetime import datetime
 import json
 import os
 import tkinter as tk
-
+from PIL import Image
 # Dahili modüller
 import Indicators
 import Utils
@@ -37,7 +37,12 @@ def build_gui(root):
     exchange.set_sandbox_mode(globals.use_testnet)
     globals.exchange = exchange
 
-    root.title("Auto Trade Murtaza")
+    image =Image.open("logo/logo.ico")
+    image = image.resize((128, 128))
+    root.display =ctk.CTkImage(light_image=image,dark_image=image)  # İkonu ayarla
+    icon = root.iconbitmap("logo/logo.ico")  # İkonu ayarla
+
+    root.title("Auto Trade-X")
     root.geometry("1280x720")
 
     container_frame = ctk.CTkFrame(root)
