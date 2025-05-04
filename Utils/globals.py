@@ -4,8 +4,14 @@ from dotenv import load_dotenv
 import time
 
 def load_env():
-    """.env dosyasını yeniden yükler."""
-    load_dotenv(override=True)
+    import sys
+    
+    if getattr(sys, 'frozen', False):
+        env_path = os.path.join(sys._MEIPASS, ".env")
+    else:
+        env_path = ".env"
+    
+    load_dotenv(env_path, override=True)
 
 def save_settings():
     """Ayarları .env dosyasına kaydeder."""
@@ -79,21 +85,16 @@ timeframe = None
 tp_percent = 0.7  # Take Profit yüzdesi
 sl_percent = 1.5  # Stop Loss yüzdesi
 
-# API / Binance Ayarları
 load_env()  # .env dosyasını yükle
 
-# Testnet mi, gerçek mi kullanacağını belirle
 api_key = os.getenv("TEST_API_KEY") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_KEY")
 api_secret = os.getenv("TEST_API_SECRET") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_SECRET")
 
-# Testnet kullanma durumu
 use_testnet = os.getenv("USE_TESTNET", "True") == "True"
 
-# Kullanıcı tarafından ayarlanan miktar ve kaldıraç
 usdt_amount = float(os.getenv("USDT_AMOUNT", "15"))  # USDT miktarı
 leverage = int(os.getenv("LEVERAGE", "10"))  # Kaldıraç
 
-# Binance bağlantısı (ccxt kullanarak)
 exchange = ccxt.binance({
     'apiKey': api_key,
     'secret': api_secret,
@@ -104,24 +105,3 @@ exchange = ccxt.binance({
 # Testnet modunu ayarla
 exchange.set_sandbox_mode(use_testnet)
 
-# def print_settings():
-#     """Her 10 saniyede bir ayarları yazdır."""
-#     while True:
-#         print("\n--- Ayarlar ---")
-#         print(f"API Key: {api_key}")
-#         print(f"API Secret: {api_secret}")
-#         print(f"Leverage: {leverage}")
-#         print(f"USDT Amount: {usdt_amount}")
-#         print(f"Testnet: {use_testnet}")
-#         print(f"Take Profit (%) : {tp_percent}")
-#         print(f"Stop Loss (%) : {sl_percent}")
-#         print(f"Binance Exchange Connection: {exchange}")
-#         print("-----------------")
-#         time.sleep(10)  # 10 saniye bekle
-
-# # Bu fonksiyonu ayrı bir iş parçacığında çalıştırmak için:
-# import threading
-
-# settings_thread = threading.Thread(target=print_settings)
-# settings_thread.daemon = True  # Ana thread sona erdiğinde bu thread de sonlanır
-# settings_thread.start()
