@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 # -------------------- ENV DOSYASINI YÜKLE --------------------
 def load_env():
     import sys
+#todo api keyi düzgün getir sonra sorun çıkıyor
 
     # PyInstaller ile paketlendiğinde farklı yol gerekir
     if getattr(sys, 'frozen', False):
@@ -50,21 +51,23 @@ def set_isolated_mode(symbol: str) -> bool:
 
     params = f"symbol={symbol}&marginType=ISOLATED&timestamp={timestamp}"
     signature = hmac.new(api_secret_bytes, params.encode(), hashlib.sha256).hexdigest()
-
     url = f"{base_url}{endpoint}?{params}&signature={signature}"
 
     try:
         response = session.post(url)
         data = response.json()
 
-        if response.status_code == 200 or data.get("code") == -4046:
-            #print(f"✅ {symbol} için ISOLATED margin tipi başarıyla ayarlandı.")
+        if response.status_code == 200:
+            print(f"✅ {symbol} için ISOLATED margin tipi ayarlandı.")
+            return True
+        elif data.get("code") == -4046:
+            print(f"ℹ️ {symbol} için margin tipi zaten ISOLATED.")
             return True
         else:
-            #print(f"❌ Margin tipi ayarlanamadı: {data}")
+            print(f"❌ ISOLATED ayarlanamadı [{symbol}]: {data}")
             return False
 
-    except requests.exceptions.RequestException as e:
-        #print(f"❌ API bağlantı hatası: {e}")
+    except Exception as e:
+        print(f"❌ API isteği başarısız [{symbol}]: {str(e)}")
         return False
 

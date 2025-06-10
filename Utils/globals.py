@@ -28,36 +28,23 @@ def save_settings():
         print("\n--- Ayarlar .env Dosyasına Kaydedildi ---")
 
 def update_globals():
-    """Ayarları günceller ve globals.py içindeki değişkenleri günceller."""
     global tp_percent, sl_percent, usdt_amount, leverage, api_key, api_secret, use_testnet
     
-    # .env dosyasını yeniden yükle
     load_env()
 
-    # Testnet mi, gerçek mi kullanacağını belirle
+    use_testnet = os.getenv("USE_TESTNET", "True") == "True"
+
     api_key = os.getenv("TEST_API_KEY") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_KEY")
     api_secret = os.getenv("TEST_API_SECRET") if os.getenv("USE_TESTNET", "True") == "True" else os.getenv("REAL_API_SECRET")
     
-    # Testnet kullanma durumu
-    use_testnet = os.getenv("USE_TESTNET", "True") == "True"
-    
-    # Kullanıcı tarafından ayarlanan miktar ve kaldıraç
+
     usdt_amount = float(os.getenv("USDT_AMOUNT", "15"))  # USDT miktarı
     leverage = int(os.getenv("LEVERAGE", "10"))  # Kaldıraç
     
-    # Diğer ayarları da yükle
     tp_percent = float(os.getenv("TP_PERCENT", "0.7"))  # Take Profit yüzdesi
     sl_percent = float(os.getenv("SL_PERCENT", "1.5"))  # Stop Loss yüzdesi
 
-    # print("\n--- Ayarlar Güncellendi ---")
-    # print(f"API Key: {api_key}")
-    # print(f"API Secret: {api_secret}")
-    # print(f"Leverage: {leverage}")
-    # print(f"USDT Amount: {usdt_amount}")
-    # print(f"Testnet: {use_testnet}")
-    # print(f"Take Profit (%) : {tp_percent}")
-    # print(f"Stop Loss (%) : {sl_percent}")
-    # print("-------------------------")
+
 
 # UI Nesneleri
 root = None
