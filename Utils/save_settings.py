@@ -20,7 +20,6 @@ def open_settings_window(root):
     win.resizable(False, True)
     win.grab_set()
 
-    # API Key/Secret Alanları
     use_testnet_var = ctk.BooleanVar(value=globals.use_testnet)
 
     ctk.CTkLabel(win, text="API Key:").pack(pady=5)
@@ -33,11 +32,9 @@ def open_settings_window(root):
     api_secret_entry.insert(0, globals.api_secret)
     api_secret_entry.pack()
 
-    # Grid alanı
     grid_frame = ctk.CTkFrame(win, fg_color="transparent")
     grid_frame.pack(pady=10)
 
-    # 1. Satır: Kaldıraç - USDT
     row1 = ctk.CTkFrame(grid_frame)
     row1.pack(pady=5)
 
@@ -65,11 +62,9 @@ def open_settings_window(root):
     sl_entry.insert(0, str(globals.sl_percent))
     sl_entry.grid(row=1, column=1, padx=5)
 
-    # Testnet Switch
     ctk.CTkLabel(win, text="Testnet Modu:").pack(pady=5)
     ctk.CTkSwitch(win, text="Testnet'i Kullan", variable=use_testnet_var).pack()
 
-    # Tema Seçimi
     ctk.CTkLabel(win, text="Tema Seç:").pack(pady=5)
     theme_var = ctk.StringVar(value=ctk.get_appearance_mode())
     theme_option = ctk.CTkOptionMenu(win, variable=theme_var, values=["Light", "Dark", "System"])
@@ -84,7 +79,6 @@ def open_settings_window(root):
         is_testnet = use_testnet_var.get()
         set_key(".env", "USE_TESTNET", str(is_testnet))
 
-        # Doğru API keyleri .env'e yaz
         if is_testnet:
             set_key(".env", "TEST_API_KEY", api_key_entry.get())
             set_key(".env", "TEST_API_SECRET", api_secret_entry.get())
@@ -92,7 +86,6 @@ def open_settings_window(root):
             set_key(".env", "REAL_API_KEY", api_key_entry.get())
             set_key(".env", "REAL_API_SECRET", api_secret_entry.get())
 
-        # Diğer ayarları kaydet
         set_key(".env", "LEVERAGE", leverage_entry.get())
         set_key(".env", "USDT_AMOUNT", usdt_entry.get())
         set_key(".env", "TP_PERCENT", tp_entry.get())
@@ -101,6 +94,5 @@ def open_settings_window(root):
         globals.update_globals()
         CustomMessageBox(win, title="Başarılı", message="✅ Ayarlar kaydedildi.")
 
-    # Butonlar
     ctk.CTkButton(win, text="Temayı Uygula", command=apply_theme).pack(pady=10)
     ctk.CTkButton(win, text="Kaydet ve Kapat", command=lambda: [save_settings(), win.destroy()]).pack(pady=10)
