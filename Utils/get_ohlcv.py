@@ -33,6 +33,5 @@ def get_ohlcv(symbol="BTC/USDT", timeframe="1m", limit=300, cooldown=1.0):
         df.set_index("timestamp", inplace=True)
         return df if not df.empty else None
     except Exception as e:
-        msg = f"Veri alınamadı:\n{str(e)}"
-      #  print(f"[HATA: OHLCV] {msg}") if getattr(globals, "debug", False) else show_error("Hata", msg)
+        show_error("Hata", f"Veri alınamadı:\n{str(e)}")
         return None

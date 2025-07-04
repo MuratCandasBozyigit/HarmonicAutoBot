@@ -48,7 +48,6 @@ def open_settings_window(root):
     usdt_entry.insert(0, str(globals.usdt_amount))
     usdt_entry.grid(row=1, column=1, padx=5)
 
-    # 2. Satır: TP - SL
     row2 = ctk.CTkFrame(grid_frame)
     row2.pack(pady=5)
 
@@ -62,13 +61,15 @@ def open_settings_window(root):
     sl_entry.insert(0, str(globals.sl_percent))
     sl_entry.grid(row=1, column=1, padx=5)
 
-   # ctk.CTkLabel(win, text="Testnet Modu:").pack(pady=5)
-   # ctk.CTkSwitch(win, text="Testnet'i Kullan", variable=use_testnet_var).pack()
-
     ctk.CTkLabel(win, text="Tema Seç:").pack(pady=5)
     theme_var = ctk.StringVar(value=ctk.get_appearance_mode())
     theme_option = ctk.CTkOptionMenu(win, variable=theme_var, values=["Light", "Dark", "System"])
     theme_option.pack()
+
+    ctk.CTkLabel(win, text="Borsa Seç:").pack(pady=5)
+    exchange_var = ctk.StringVar(value=globals.exchange_name.capitalize())
+    exchange_option = ctk.CTkOptionMenu(win, variable=exchange_var, values=["Binance", "Bybit", "MEXC", "Bitget", "OKX", "Gate.io", "KuCoin"])
+    exchange_option.pack()
 
     def apply_theme():
         selected = theme_var.get().lower()
@@ -90,6 +91,8 @@ def open_settings_window(root):
         set_key(".env", "USDT_AMOUNT", usdt_entry.get())
         set_key(".env", "TP_PERCENT", tp_entry.get())
         set_key(".env", "SL_PERCENT", sl_entry.get())
+
+        set_key(".env", "EXCHANGE", exchange_var.get())
 
         globals.update_globals()
         CustomMessageBox(win, title="Başarılı", message="✅ Ayarlar kaydedildi.")
