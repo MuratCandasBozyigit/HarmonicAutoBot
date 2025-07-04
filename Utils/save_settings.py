@@ -62,8 +62,8 @@ def open_settings_window(root):
     sl_entry.insert(0, str(globals.sl_percent))
     sl_entry.grid(row=1, column=1, padx=5)
 
-    ctk.CTkLabel(win, text="Testnet Modu:").pack(pady=5)
-    ctk.CTkSwitch(win, text="Testnet'i Kullan", variable=use_testnet_var).pack()
+   # ctk.CTkLabel(win, text="Testnet Modu:").pack(pady=5)
+   # ctk.CTkSwitch(win, text="Testnet'i Kullan", variable=use_testnet_var).pack()
 
     ctk.CTkLabel(win, text="Tema Seç:").pack(pady=5)
     theme_var = ctk.StringVar(value=ctk.get_appearance_mode())

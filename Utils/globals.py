@@ -14,13 +14,12 @@ def load_env():
     load_dotenv(env_path, override=True)
 
 def save_settings():
-    """Ayarları .env dosyasına kaydeder."""
     with open(".env", "w") as f:
         f.write(f"USE_TESTNET={use_testnet}\n")
         f.write(f"REAL_API_KEY={api_key}\n")
         f.write(f"REAL_API_SECRET={api_secret}\n")
-        f.write(f"TEST_API_KEY={api_key}\n")  # Test API Key'i değiştirebilirsiniz.
-        f.write(f"TEST_API_SECRET={api_secret}\n")  # Test API Secret'ı değiştirebilirsiniz.
+      #  f.write(f"TEST_API_KEY={api_key}\n")  # Test API Key'i değiştirebilirsiniz.
+       # f.write(f"TEST_API_SECRET={api_secret}\n")  # Test API Secret'ı değiştirebilirsiniz.
         f.write(f"USDT_AMOUNT={usdt_amount}\n")
         f.write(f"LEVERAGE={leverage}\n")
         f.write(f"TP_PERCENT={tp_percent}\n")
@@ -43,7 +42,6 @@ def update_globals():
     
     tp_percent = float(os.getenv("TP_PERCENT", "0.7"))  # Take Profit yüzdesi
     sl_percent = float(os.getenv("SL_PERCENT", "1.5"))  # Stop Loss yüzdesi
-
 
 
 # UI Nesneleri
