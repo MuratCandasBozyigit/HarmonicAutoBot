@@ -44,6 +44,7 @@ def update_globals():
     sl_percent = float(os.getenv("SL_PERCENT", "1.5"))  # Stop Loss yüzdesi
 
 
+
 # UI Nesneleri
 root = None
 chart_frame = None
