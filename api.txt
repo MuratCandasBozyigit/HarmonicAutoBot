@@ -1,0 +1,13 @@
+# --- Testnet key ---
+TEST_API_KEY='e7ebd25dca96901378dfc2376d6b15b646e68cedd6e4ba31641c04ce4abe7e69'
+TEST_API_SECRET='77057cfa7db87927c019a53104a778c758b9002e1ff4310f0d31fe391c1d0173'
+
+# --- Gerçek key (Şu an test yapmıyorsan dummy olabilir) ---
+REAL_API_KEY='mx0vglDLUJYtQCyw2F'
+REAL_API_SECRET='63745f1d7a254b4fb42263c5e6315c58'
+
+
+
+
+
+MEXC:
