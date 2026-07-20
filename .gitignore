@@ -399,3 +399,13 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 /dist/main.exe
+
+# Python / local secrets
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
